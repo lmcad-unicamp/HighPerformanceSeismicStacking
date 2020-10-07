@@ -2,8 +2,9 @@
 
 using namespace std;
 
-SpitzWorker::SpitzWorker(ComputeAlgorithm* computeAlgorithm)
-: computeAlgorithm(computeAlgorithm) {
+SpitzWorker::SpitzWorker(ComputeAlgorithm* computeAlgorithm, spits::metrics& metrics)
+: metrics(metrics),
+  computeAlgorithm(computeAlgorithm) {
 }
 
 int SpitzWorker::run(spits::istream& task, const spits::pusher& result) {
@@ -28,7 +29,9 @@ int SpitzWorker::run(spits::istream& task, const spits::pusher& result) {
 
     for (unsigned int i = 0; i < static_cast<unsigned int>(StatisticResult::CNT); i++) {
         StatisticResult statResult = static_cast<StatisticResult>(i);
-        outputStream.write_float(computeAlgorithm->getStatisticalResult(statResult));
+        float stat = computeAlgorithm->getStatisticalResult(statResult);
+        metrics.add_metric(STATISTIC_NAME_MAP[statResult].c_str(), stat);
+        outputStream.write_float(stat);
     }
 
     result.push(outputStream);

@@ -12,8 +12,9 @@ using namespace std;
 
 class SpitzWorker : public spits::worker {
     protected:
+        spits::metrics& metrics;
         unique_ptr<ComputeAlgorithm> computeAlgorithm;
     public:
-        SpitzWorker(ComputeAlgorithm* computeAlgorithm);
+        SpitzWorker(ComputeAlgorithm* computeAlgorithm, spits::metrics& metrics);
         int run(spits::istream& task, const spits::pusher& result);
 };
