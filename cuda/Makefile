@@ -16,7 +16,7 @@ endif
 ENABLE_PROFILING := no
 ifeq ($(ENABLE_PROFILING), yes)
 	CFLAGS += -DPROFILE_ENABLED
-	NVCCFLAGS += -DPROFILE_ENABLED
+	NVCCFLAGS += -DPROFILE_ENABLED -lineinfo
 endif
 
 LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -lcuda

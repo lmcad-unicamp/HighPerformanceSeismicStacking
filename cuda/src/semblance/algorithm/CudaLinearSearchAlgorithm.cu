@@ -48,8 +48,10 @@ void CudaLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
     LOGD("sharedMemSizeCount = " << sharedMemSizeCount);
 
 #ifdef PROFILE_ENABLED
-    LOGI("CUDA Profiling is enabled.")
-    CUDA_ASSERT(cudaProfilerStart());
+    if (filteredTracesCount) {
+        LOGI("CUDA profiler is enabled.")
+        CUDA_ASSERT(cudaProfilerStart());
+    }
 #endif
 
     kernelLinearSearch<<< dimGrid, threadCount, sharedMemSizeCount >>>(
@@ -69,8 +71,10 @@ void CudaLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
     CUDA_ASSERT(cudaGetLastError());
 
 #ifdef PROFILE_ENABLED
-    CUDA_ASSERT(cudaProfilerStop());
-    LOGI("CUDA Profiling is disabled.")
+    if (filteredTracesCount) {
+        CUDA_ASSERT(cudaProfilerStop());
+        LOGI("CUDA profiler is disabled.");
+    }
 #endif
 }
 
@@ -145,4 +149,5 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
     MEASURE_EXEC_TIME(copyTime, copyOnlySelectedTracesToDevice(usedTraceMask));
 
-    LOGI("Execution time for copying traces is " << copyTime.count() << "s");}
+    LOGI("Execution time for copying traces is " << copyTime.count() << "s");
+}
