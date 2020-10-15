@@ -2,6 +2,9 @@
 
 #include <sstream>
 
+unsigned int OffsetContinuationTrajectory::VELOCITY = 0;
+unsigned int OffsetContinuationTrajectory::SLOPE = 1;
+
 OffsetContinuationTrajectory::OffsetContinuationTrajectory() :
     Traveltime({
         TraveltimeParameter("velocity"),

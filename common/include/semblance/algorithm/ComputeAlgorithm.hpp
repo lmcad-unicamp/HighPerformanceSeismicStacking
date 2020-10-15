@@ -16,6 +16,7 @@ using namespace std;
 enum class GatherData {
     MDPNT,
     HLFOFFST,
+    HLFOFFST_SQ,
     FILT_SAMPL,
     FILT_MDPNT,
     FILT_HLFOFFST,

@@ -33,23 +33,26 @@ void ComputeAlgorithm::copyGatherDataToDevice() {
 
     unsigned int traceCount = gather->getTotalTracesCount();
 
-    LOGH("Allocating data for GatherData::MDPNT [" << traceCount << " elements]");
-
     deviceFilteredTracesDataMap[GatherData::MDPNT].reset(dataFactory->build(traceCount, deviceContext));
-
-    LOGH("Allocating data for GatherData::HLFOFFST [" << traceCount << " elements]");
 
     deviceFilteredTracesDataMap[GatherData::HLFOFFST].reset(dataFactory->build(traceCount, deviceContext));
 
-    vector<float> tempMidpointArray(traceCount), tempHalfoffsetArray(traceCount);
+    deviceFilteredTracesDataMap[GatherData::HLFOFFST_SQ].reset(dataFactory->build(traceCount, deviceContext));
+
+    vector<float> tempMidpointArray(traceCount), tempHalfoffsetArray(traceCount), tempHalfoffsetSqArray(traceCount);
 
     for (unsigned int t = 0; t < traceCount; t++) {
-        tempMidpointArray[t] = gather->getMidpointOfTrace(t);
-        tempHalfoffsetArray[t] = gather->getHalfoffsetOfTrace(t);
+        float m = gather->getMidpointOfTrace(t);
+        float h = gather->getHalfoffsetOfTrace(t);
+
+        tempMidpointArray[t] = m;
+        tempHalfoffsetArray[t] = h;
+        tempHalfoffsetSqArray[t] = h * h;
     }
 
     deviceFilteredTracesDataMap[GatherData::MDPNT]->copyFrom(tempMidpointArray);
     deviceFilteredTracesDataMap[GatherData::HLFOFFST]->copyFrom(tempHalfoffsetArray);
+    deviceFilteredTracesDataMap[GatherData::HLFOFFST_SQ]->copyFrom(tempHalfoffsetSqArray);
 
     deviceFilteredTracesDataMap[GatherData::FILT_SAMPL].reset(dataFactory->build(deviceContext));
     deviceFilteredTracesDataMap[GatherData::FILT_MDPNT].reset(dataFactory->build(deviceContext));
@@ -130,8 +133,11 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
     vector<float> tempHalfoffsetSquared(filteredTracesCount);
 
     unsigned int cudaArrayOffset = 0, idx = 0;
-    for (unsigned int i = 0; i < traceCount; i++) {
+    for (unsigned int i = 0; i < traceCount && filteredTracesCount; i++) {
+
         if (usedTraceMask[i]) {
+
+            // cout << (usedTraceMask[i] ? 1 : 0) << "(" << i << ") ";
 
             const Trace& trace = gather->getTraceAtIndex(i);
 
@@ -145,6 +151,10 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
             idx++;
         }
     }
+
+    // cout << endl;
+
+    // getchar();
 
     deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]->copyFrom(tempMidpoint);
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]->copyFrom(tempHalfoffset);

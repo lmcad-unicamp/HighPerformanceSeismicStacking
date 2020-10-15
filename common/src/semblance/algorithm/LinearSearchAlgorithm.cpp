@@ -40,29 +40,6 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
     chrono::duration<double> selectionExecutionTime = chrono::duration<double>::zero();
     chrono::duration<double> totalExecutionTime = chrono::duration<double>::zero();
 
-    if (traveltime->getTraveltimeWord() == "oct") {
-
-        vector<float> parameterSampleArray(parameterArrayStep * numberOfParameters);
-
-        default_random_engine generator;
-
-        for (unsigned int prmtr = 0; prmtr < numberOfParameters; prmtr++) {
-
-            float min = traveltime->getLowerBoundForParameter(prmtr);
-            float max = traveltime->getUpperBoundForParameter(prmtr);
-
-            uniform_real_distribution<float> uniformDist(min, max);
-
-            unsigned int step = prmtr * parameterArrayStep;
-
-            for (unsigned int idx = 0; idx < parameterArrayStep; idx++) {
-                parameterSampleArray[step + idx] = uniformDist(generator);
-            }
-        }
-
-        deviceParameterArray->copyFrom(parameterSampleArray);
-    }
-
     MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
 
     LOGI("parameterArrayStep = " << parameterArrayStep);

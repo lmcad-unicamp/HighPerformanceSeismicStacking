@@ -2,6 +2,7 @@
 #include "common/include/output/Logger.hpp"
 #include "common/include/traveltime/CommonMidPoint.hpp"
 #include "common/include/traveltime/CommonReflectionSurface.hpp"
+#include "common/include/traveltime/OffsetContinuationTrajectory.hpp"
 #include "cuda/include/execution/CudaUtils.hpp"
 #include "cuda/include/semblance/algorithm/CudaLinearSearchAlgorithm.hpp"
 #include "cuda/include/semblance/data/CudaDataContainer.hpp"
@@ -9,9 +10,11 @@
 #include "cuda/include/semblance/kernel/linear_search.h"
 #include "cuda/include/semblance/kernel/cmp/linear_search.cuh"
 #include "cuda/include/semblance/kernel/zocrs/linear_search.cuh"
+#include "cuda/include/semblance/kernel/oct/linear_search.cuh"
 
 #include <cmath>
 #include <numeric>
+#include <random>
 #include <sstream>
 #include <stdexcept>
 
@@ -117,7 +120,39 @@ void CudaLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
             break;
         }
-        case OCT:
+        case OCT: {
+            computeSemblancesForOffsetContinuationTrajectory<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]),
+                filteredTracesCount,
+                samplesPerTrace,
+                gather->getApm(),
+                m0,
+                traveltime->getReferenceHalfoffset(),
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                CUDA_DEV_PTR(deviceNotUsedCountArray),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])
+            );
+
+            dim3 dimGridBest(static_cast<int>(ceil(static_cast<float>(samplesPerTrace) / static_cast<float>(threadCount))));
+
+            selectBestSemblancesForOffsetContinuationTrajectory<<< dimGridBest, threadCount >>>(
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK]),
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                samplesPerTrace,
+                CUDA_DEV_PTR(deviceResultArray)
+            );
+
+            break;
+        }
         default:
             throw invalid_argument("Invalid traveltime model");
     }
@@ -169,7 +204,27 @@ void CudaLinearSearchAlgorithm::initializeParameters() {
 
             break;
         }
-        case OCT:
+        case OCT: {
+            buildParameterArrayForOffsetContinuationTrajectory<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(deviceParameterArray),
+                traveltime->getLowerBoundForParameter(OffsetContinuationTrajectory::VELOCITY),
+                discretizationStep[OffsetContinuationTrajectory::VELOCITY],
+                discretizationGranularity[OffsetContinuationTrajectory::VELOCITY],
+                traveltime->getLowerBoundForParameter(OffsetContinuationTrajectory::SLOPE),
+                discretizationStep[OffsetContinuationTrajectory::SLOPE],
+                discretizationGranularity[OffsetContinuationTrajectory::SLOPE],
+                totalNumberOfParameters
+            );
+
+            // vector<float> test (totalNumberOfParameters * 2);
+            // deviceParameterArray->pasteTo(test);
+
+            // for (int i = 0; i < totalNumberOfParameters; i++) {
+            //     cout << "(" << test[2*i] << ", " << test[2*i + 1] << ") ";
+            // }
+
+            break;
+        }
         default:
            throw invalid_argument("Invalid traveltime model");
     }
@@ -184,6 +239,13 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
     Gather* gather = Gather::getInstance();
 
     unsigned int traceCount = gather->getTotalTracesCount();
+    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
+
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
+    float dtInSeconds = gather->getSamplePeriodInSeconds();
+    int tauIndexDisplacement = gather->getTauIndexDisplacement();
+    unsigned int windowSize = gather->getWindowSize();
+    float apm = gather->getApm();
 
     vector<unsigned char> usedTraceMask(traceCount);
 
@@ -212,10 +274,46 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
                 traceCount,
                 deviceUsedTraceMaskArray,
                 m0,
-                gather->getApm()
+                apm
             );
             break;
-        case OCT:
+        case OCT: {
+            unsigned int initialPop = 1024;
+            vector<float> parameterSampleArray(initialPop * 2);
+
+            default_random_engine generator;
+    
+            for (unsigned int prmtr = 0; prmtr < 2; prmtr++) {
+    
+                float min = traveltime->getLowerBoundForParameter(prmtr);
+                float max = traveltime->getUpperBoundForParameter(prmtr);
+    
+                uniform_real_distribution<float> uniformDist(min, max);
+    
+                for (unsigned int idx = 0; idx < initialPop; idx++) {
+                    parameterSampleArray[idx * 2 + prmtr] = uniformDist(generator);
+                }
+            }
+    
+            unique_ptr<DataContainer> selectionParameterArray(dataFactory->build(2 * initialPop, deviceContext));
+
+            selectionParameterArray->copyFrom(parameterSampleArray);
+
+            selectTracesForOffsetContinuationTrajectory<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::HLFOFFST]),
+                CUDA_DEV_PTR(selectionParameterArray),
+                initialPop,
+                traceCount,
+                samplesPerTrace,
+                dtInSeconds,
+                apm,
+                m0,
+                traveltime->getReferenceHalfoffset(),
+                deviceUsedTraceMaskArray
+            );
+            break;
+        }
         default:
             throw invalid_argument("Invalid traveltime model");
     }

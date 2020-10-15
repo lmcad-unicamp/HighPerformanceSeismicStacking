@@ -7,6 +7,8 @@ using namespace std;
 class OffsetContinuationTrajectory : public Traveltime {
 
     public:
+        static unsigned int VELOCITY, SLOPE;
+
         OffsetContinuationTrajectory();
 
         enum traveltime_t getModel() const override;
