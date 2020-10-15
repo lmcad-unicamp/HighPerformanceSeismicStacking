@@ -10,6 +10,8 @@ class CommonReflectionSurface : public Traveltime {
         float ainInDegrees, ainInRadian, referenceVelocity, bRatio;
 
     public:
+        static unsigned int VELOCITY, A, B;
+
         CommonReflectionSurface();
 
         float getAinInDegrees() const;

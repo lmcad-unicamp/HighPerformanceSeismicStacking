@@ -7,6 +7,9 @@ unordered_map<SemblanceCommonResult, string> Traveltime::fixedResultDescription 
     { SemblanceCommonResult::STACK, "stack" }
 };
 
+Traveltime::Traveltime(vector<TraveltimeParameter> v) : travelTimeParameters(v), referenceHalfOffset(0) {
+}
+
 unsigned int Traveltime::getIndexForCommonResult(SemblanceCommonResult r) const  {
     return static_cast<unsigned int>(r);
 }

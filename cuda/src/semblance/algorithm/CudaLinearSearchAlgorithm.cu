@@ -1,10 +1,14 @@
 #include "common/include/execution/Utils.hpp"
 #include "common/include/output/Logger.hpp"
+#include "common/include/traveltime/CommonMidPoint.hpp"
+#include "common/include/traveltime/CommonReflectionSurface.hpp"
 #include "cuda/include/execution/CudaUtils.hpp"
 #include "cuda/include/semblance/algorithm/CudaLinearSearchAlgorithm.hpp"
 #include "cuda/include/semblance/data/CudaDataContainer.hpp"
 #include "cuda/include/semblance/kernel/base.h"
 #include "cuda/include/semblance/kernel/linear_search.h"
+#include "cuda/include/semblance/kernel/cmp/linear_search.cuh"
+#include "cuda/include/semblance/kernel/zocrs/linear_search.cuh"
 
 #include <cmath>
 #include <numeric>
@@ -28,54 +32,151 @@ void CudaLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
     LOGI("Computing semblance for m0 = " << m0);
 
+    deviceResultArray->reset();
+    commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]->reset();
+    commonResultDeviceArrayMap[SemblanceCommonResult::STACK]->reset();
+
+    if (!filteredTracesCount) {
+        LOGI("No trace has been selected for m0 = " << m0 << ". Skipping.");
+        return;
+    }
+
+    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
+    unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
+
     Gather* gather = Gather::getInstance();
 
-    dim3 dimGrid(gather->getSamplesPerTrace());
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
+    float dtInSeconds = gather->getSamplePeriodInSeconds();
+    int tauIndexDisplacement = gather->getTauIndexDisplacement();
+    unsigned int windowSize = gather->getWindowSize();
 
-    gpu_gather_data_t kernelData = gather->getGpuGatherData();
-
-    gpu_traveltime_data_t kernelTraveltime = traveltime->toGpuData();
-
-    gpu_reference_point_t kernelReferencePoint;
-    kernelReferencePoint.m0 = m0;
-    kernelReferencePoint.h0 = traveltime->getReferenceHalfoffset();
-
-    unsigned int sharedMemSizeCount =
-        traveltime->getNumberOfResults() * threadCount * static_cast<unsigned int>(sizeof(float));
-
-    LOGD("threadCount = " << threadCount);
-    LOGD("getNumberOfResults = " << traveltime->getNumberOfResults());
-    LOGD("sharedMemSizeCount = " << sharedMemSizeCount);
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(totalNumberOfParameters * samplesPerTrace) / static_cast<float>(threadCount))));
 
 #ifdef PROFILE_ENABLED
-    if (filteredTracesCount) {
-        LOGI("CUDA profiler is enabled.")
-        CUDA_ASSERT(cudaProfilerStart());
-    }
+    LOGI("CUDA profiler is enabled.")
+    CUDA_ASSERT(cudaProfilerStart());
 #endif
 
-    kernelLinearSearch<<< dimGrid, threadCount, sharedMemSizeCount >>>(
-        CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
-        CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
-        CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]),
-        filteredTracesCount,
-        kernelData,
-        kernelReferencePoint,
-        kernelTraveltime,
-        CUDA_DEV_PTR(deviceParameterArray),
-        CUDA_DEV_PTR(deviceResultArray),
-        CUDA_DEV_PTR(deviceNotUsedCountArray)
-    );
+    switch (traveltime->getModel()) {
+        case CMP: {
+            computeSemblancesForCommonMidPoint<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]),
+                filteredTracesCount,
+                samplesPerTrace,
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])
+            );
+
+            dim3 dimGridBest(static_cast<int>(ceil(static_cast<float>(samplesPerTrace) / static_cast<float>(threadCount))));
+
+            selectBestSemblancesForCommonMidPoint<<< dimGridBest, threadCount >>>(
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK]),
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                samplesPerTrace,
+                CUDA_DEV_PTR(deviceResultArray)
+            );
+
+            break;
+        }
+        case ZOCRS: {
+            computeSemblancesForZeroOffsetCommonReflectionSurface<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]),
+                filteredTracesCount,
+                samplesPerTrace,
+                m0,
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])
+            );
+
+            dim3 dimGridBest(static_cast<int>(ceil(static_cast<float>(samplesPerTrace) / static_cast<float>(threadCount))));
+
+            selectBestSemblancesForZeroOffsetCommonReflectionSurface<<< dimGridBest, threadCount >>>(
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK]),
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                samplesPerTrace,
+                CUDA_DEV_PTR(deviceResultArray)
+            );
+
+            break;
+        }
+        case OCT:
+        default:
+            throw invalid_argument("Invalid traveltime model");
+    }
 
     CUDA_ASSERT(cudaDeviceSynchronize());
+
     CUDA_ASSERT(cudaGetLastError());
 
 #ifdef PROFILE_ENABLED
-    if (filteredTracesCount) {
-        CUDA_ASSERT(cudaProfilerStop());
-        LOGI("CUDA profiler is disabled.");
-    }
+    CUDA_ASSERT(cudaProfilerStop());
+    LOGI("CUDA profiler is disabled.");
 #endif
+}
+
+void CudaLinearSearchAlgorithm::initializeParameters() {
+
+    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
+
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(totalNumberOfParameters) / static_cast<float>(threadCount))));
+
+    switch (traveltime->getModel()) {
+        case CMP: {
+            float minVelocity = traveltime->getLowerBoundForParameter(CommonMidPoint::VELOCITY);
+            float increment = discretizationStep[CommonMidPoint::VELOCITY];
+
+            buildParameterArrayForCommonMidPoint<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(deviceParameterArray),
+                minVelocity,
+                increment,
+                totalNumberOfParameters
+            );
+
+            break;
+        }
+        case ZOCRS: {
+            buildParameterArrayForZeroOffsetCommonReflectionSurface<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(deviceParameterArray),
+                traveltime->getLowerBoundForParameter(CommonReflectionSurface::VELOCITY),
+                discretizationStep[CommonReflectionSurface::VELOCITY],
+                discretizationGranularity[CommonReflectionSurface::VELOCITY],
+                traveltime->getLowerBoundForParameter(CommonReflectionSurface::A),
+                discretizationStep[CommonReflectionSurface::A],
+                discretizationGranularity[CommonReflectionSurface::A],
+                traveltime->getLowerBoundForParameter(CommonReflectionSurface::B),
+                discretizationStep[CommonReflectionSurface::B],
+                discretizationGranularity[CommonReflectionSurface::B],
+                totalNumberOfParameters
+            );
+
+            break;
+        }
+        case OCT:
+        default:
+           throw invalid_argument("Invalid traveltime model");
+    }
+
+    CUDA_ASSERT(cudaGetLastError());
+
+    CUDA_ASSERT(cudaDeviceSynchronize());
 }
 
 void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
@@ -90,54 +191,34 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
     CUDA_ASSERT(cudaMalloc((void **) &deviceUsedTraceMaskArray, traceCount * sizeof(unsigned char)));
     CUDA_ASSERT(cudaMemset(deviceUsedTraceMaskArray, 0, traceCount * sizeof(unsigned char)))
 
-    dim3 dimGrid(static_cast<int>(ceil(traceCount / threadCount)));
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(traceCount) / static_cast<float>(threadCount))));
 
     LOGI("Using " << dimGrid.x << " blocks for traces filtering (threadCount = "<< threadCount << ")");
 
-    gpu_gather_data_t gatherData = gather->getGpuGatherData();
-
-    gpu_traveltime_data_t kernelTraveltime = traveltime->toGpuData();
-
-    gpu_reference_point_t kernelReferencePoint;
-    kernelReferencePoint.m0 = m0;
-    kernelReferencePoint.h0 = traveltime->getReferenceHalfoffset();
-
-    chrono::duration<double> kernelExecutionTime = chrono::duration<double>::zero();
     chrono::duration<double> copyTime = chrono::duration<double>::zero();
 
     switch (traveltime->getModel()) {
         case CMP:
-        case ZOCRS:
-            LOGD("Executing filterMidpointDependentTraces<<<>>> kernel");
-            MEASURE_EXEC_TIME(kernelExecutionTime, (filterMidpointDependentTraces<<<dimGrid, threadCount>>>(
+            selectTracesForCommonMidPoint<<<dimGrid, threadCount>>>(
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
                 traceCount,
                 deviceUsedTraceMaskArray,
-                traveltime->toGpuData(),
-                gather->getApm(),
                 m0
-            )));
+            );
             break;
-
-        case OCT:
-            LOGD("Executing filterOutTracesForOffsetContinuationTrajectoryAndLinearSearch<<<>>> kernel");
-            MEASURE_EXEC_TIME(kernelExecutionTime, (filterOutTracesForOffsetContinuationTrajectoryAndLinearSearch<<<dimGrid, threadCount>>>(
+        case ZOCRS:
+            selectTracesForZeroOffsetCommonReflectionSurface<<<dimGrid, threadCount>>>(
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
-                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::HLFOFFST]),
-                deviceUsedTraceMaskArray,
                 traceCount,
-                gatherData,
-                kernelReferencePoint,
-                kernelTraveltime,
-                CUDA_DEV_PTR(deviceParameterArray),
-                getParameterArrayStep()
-            )));
+                deviceUsedTraceMaskArray,
+                m0,
+                gather->getApm()
+            );
             break;
+        case OCT:
         default:
             throw invalid_argument("Invalid traveltime model");
     }
-
-    LOGI("Execution time for filtering kernel is " << kernelExecutionTime.count() << "s");
 
     CUDA_ASSERT(cudaGetLastError());
 

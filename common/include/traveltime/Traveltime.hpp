@@ -24,8 +24,7 @@ class Traveltime {
 
         float referenceHalfOffset;
 
-        Traveltime(vector<TraveltimeParameter> v) :
-            travelTimeParameters(v), referenceHalfOffset(0) {};
+        Traveltime(vector<TraveltimeParameter> v);
 
     public:
         virtual ~Traveltime() {};

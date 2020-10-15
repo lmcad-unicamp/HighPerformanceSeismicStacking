@@ -15,5 +15,7 @@ class CudaLinearSearchAlgorithm : public LinearSearchAlgorithm {
 
         void computeSemblanceAtGpuForMidpoint(float m0) override;
 
+        void initializeParameters() override;
+
         void selectTracesToBeUsedForMidpoint(float m0) override;
 };

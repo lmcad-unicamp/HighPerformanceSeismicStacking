@@ -2,9 +2,12 @@
 #define SEMBL_ALGORITHM_LINEAR_SEARCH_H
 
 #include "common/include/semblance/algorithm/ComputeAlgorithm.hpp"
+#include "common/include/traveltime/Traveltime.hpp"
 
 class LinearSearchAlgorithm : public ComputeAlgorithm {
     protected:
+        unordered_map<SemblanceCommonResult, unique_ptr<DataContainer>> commonResultDeviceArrayMap;
+
         vector<unsigned int> discretizationGranularity, discretizationDivisor;
 
         vector<float> discretizationStep;
@@ -39,5 +42,7 @@ class LinearSearchAlgorithm : public ComputeAlgorithm {
         void setDiscretizationDivisorForParameter(unsigned int p, unsigned int d);
 
         void setDiscretizationGranularityForParameter(unsigned int p, unsigned int d);
+
+        virtual void initializeParameters() = 0;
 };
 #endif

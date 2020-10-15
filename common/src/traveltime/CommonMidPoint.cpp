@@ -1,5 +1,8 @@
 #include "common/include/traveltime/CommonMidPoint.hpp"
+
 #include <sstream>
+
+unsigned int CommonMidPoint::VELOCITY = 0;
 
 CommonMidPoint::CommonMidPoint() : Traveltime({TraveltimeParameter("velocity")}) {
 }

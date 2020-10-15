@@ -4,7 +4,7 @@
 
 #define MAX_PARAMETER_COUNT 3
 #define MAX_THREADS_PER_BLOCK 1024
-#define MAX_WINDOW_SIZE 64
+#define MAX_WINDOW_SIZE 32
 
 enum gpu_error_code {
     NO_ERROR,

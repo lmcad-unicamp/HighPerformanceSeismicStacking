@@ -19,6 +19,7 @@ enum class GatherData {
     FILT_SAMPL,
     FILT_MDPNT,
     FILT_HLFOFFST,
+    FILT_HLFOFFST_SQ,
     CNT
 };
 

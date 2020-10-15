@@ -3,6 +3,10 @@
 
 #include <sstream>
 
+unsigned int CommonReflectionSurface::VELOCITY = 0;
+unsigned int CommonReflectionSurface::A = 1;
+unsigned int CommonReflectionSurface::B = 2;
+
 CommonReflectionSurface::CommonReflectionSurface() :
     Traveltime({
         TraveltimeParameter("velocity"),

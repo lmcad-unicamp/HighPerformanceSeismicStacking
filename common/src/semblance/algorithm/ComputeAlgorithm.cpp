@@ -16,7 +16,7 @@ ComputeAlgorithm::ComputeAlgorithm(
     algorithmName(name),
     deviceContext(context),
     traveltime(model),
-    threadCount(1024),
+    threadCount(64),
     threadCountToRestore(threadCount),
     computedStatisticalResults(static_cast<unsigned int>(StatisticResult::CNT)) {
 }
@@ -51,17 +51,10 @@ void ComputeAlgorithm::copyGatherDataToDevice() {
     deviceFilteredTracesDataMap[GatherData::MDPNT]->copyFrom(tempMidpointArray);
     deviceFilteredTracesDataMap[GatherData::HLFOFFST]->copyFrom(tempHalfoffsetArray);
 
-    LOGH("Initializing GatherData::FILT_SAMPL");
-
     deviceFilteredTracesDataMap[GatherData::FILT_SAMPL].reset(dataFactory->build(deviceContext));
-
-    LOGH("Initializing GatherData::FILT_MDPNT");
-
     deviceFilteredTracesDataMap[GatherData::FILT_MDPNT].reset(dataFactory->build(deviceContext));
-
-    LOGH("Initializing GatherData::FILT_HLFOFFST");
-
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST].reset(dataFactory->build(deviceContext));
+    deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ].reset(dataFactory->build(deviceContext));
 }
 
 float ComputeAlgorithm::getStatisticalResult(StatisticResult statResult) const {
@@ -130,9 +123,11 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
     deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]->reallocate(filteredTracesCount * gather->getSamplesPerTrace());
     deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]->reallocate(filteredTracesCount);
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]->reallocate(filteredTracesCount);
+    deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]->reallocate(filteredTracesCount);
 
     vector<float> tempMidpoint(filteredTracesCount);
     vector<float> tempHalfoffset(filteredTracesCount);
+    vector<float> tempHalfoffsetSquared(filteredTracesCount);
 
     unsigned int cudaArrayOffset = 0, idx = 0;
     for (unsigned int i = 0; i < traceCount; i++) {
@@ -144,6 +139,7 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
 
             tempMidpoint[idx] = trace.getMidpoint();
             tempHalfoffset[idx] = trace.getHalfoffset();
+            tempHalfoffsetSquared[idx] = trace.getHalfoffset() * trace.getHalfoffset();
 
             cudaArrayOffset += gather->getSamplesPerTrace();
             idx++;
@@ -152,6 +148,7 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
 
     deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]->copyFrom(tempMidpoint);
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]->copyFrom(tempHalfoffset);
+    deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]->copyFrom(tempHalfoffsetSquared);
 
     LOGI("Copy time is " << copyExecutionTime.count());
 }

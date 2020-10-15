@@ -68,31 +68,7 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
     LOGI("parameterArrayStep = " << parameterArrayStep);
     LOGI("totalNumberOfParameters = " << totalNumberOfParameters);
 
-    for (unsigned int i = 0; i < totalNumberOfParameters; i++) {
-
-        for (unsigned int parameterIndex = 0; parameterIndex < numberOfParameters; parameterIndex++) {
-            unsigned int tempParameterIndex = parameterIndex * parameterArrayStep + i % threadCount;
-            tempParameterArray[tempParameterIndex] = getParameterValueAt(i, parameterIndex);
-        }
-
-        if ((i + 1) % threadCount == 0 || (i + 1) == totalNumberOfParameters) {
-
-            if ((i + 1) == totalNumberOfParameters && totalNumberOfParameters % threadCount) {
-                changeThreadCountTemporarilyTo((i + 1) % threadCount);
-            }
-            else if ((i + 1 + threadCount) > totalNumberOfParameters) {
-                /* Next time we'll be running kernel with a smaller # of threads, so update parameterArrayStep. */
-                LOGI("Changing parameterArrayStep to " << totalNumberOfParameters % threadCount);
-                parameterArrayStep = totalNumberOfParameters % threadCount;
-            }
-
-            deviceParameterArray->copyFrom(tempParameterArray);
-
-            MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
-        }
-    }
-
-    restoreThreadCount();
+    MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
 
     deviceResultArray->pasteTo(computedResults);
 
@@ -137,6 +113,8 @@ void LinearSearchAlgorithm::setDiscretizationGranularityForParameter(
 
 void LinearSearchAlgorithm::setUp() {
 
+    chrono::duration<double> initalizationExecutionTime = chrono::duration<double>::zero();
+
     deviceContext->activate();
 
     setupArrays();
@@ -144,6 +122,10 @@ void LinearSearchAlgorithm::setUp() {
     copyGatherDataToDevice();
 
     setupDiscretizationSteps();
+
+    MEASURE_EXEC_TIME(initalizationExecutionTime, initializeParameters());
+
+    LOGI("initalizationExecutionTime = " << initalizationExecutionTime.count() << "s");
 
     isSet = true;
 }
@@ -157,20 +139,19 @@ void LinearSearchAlgorithm::setupArrays() {
 
     Gather* gather = Gather::getInstance();
 
+    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
+    unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
     unsigned int numberOfResults = traveltime->getNumberOfResults();
     unsigned int numberOfSamples = gather->getSamplesPerTrace();
     unsigned int parameterArrayStep = getParameterArrayStep();
 
-    LOGI("Allocating data for deviceParameterArray [" << numberOfParameters * parameterArrayStep << " elements]");
+    deviceParameterArray.reset(dataFactory->build(numberOfParameters * totalNumberOfParameters, deviceContext));
 
-    deviceParameterArray.reset(dataFactory->build(numberOfParameters * parameterArrayStep, deviceContext));
+    deviceNotUsedCountArray.reset(dataFactory->build(numberOfSamples * totalNumberOfParameters, deviceContext));
 
-    LOGI("Allocating data for deviceNotUsedCountArray [" << numberOfSamples * parameterArrayStep << " elements]");
-
-    deviceNotUsedCountArray.reset(dataFactory->build(numberOfSamples * parameterArrayStep, deviceContext));
-
-    LOGI("Allocating data for deviceResultArray [" << numberOfResults * numberOfSamples << " elements]");
+    commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL].reset(dataFactory->build(numberOfSamples * totalNumberOfParameters, deviceContext));
+    commonResultDeviceArrayMap[SemblanceCommonResult::STACK].reset(dataFactory->build(numberOfSamples * totalNumberOfParameters, deviceContext));
 
     deviceResultArray.reset(dataFactory->build(numberOfResults * numberOfSamples, deviceContext));
 

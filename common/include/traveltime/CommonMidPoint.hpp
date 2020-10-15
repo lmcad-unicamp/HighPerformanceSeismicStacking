@@ -7,6 +7,8 @@ using namespace std;
 class CommonMidPoint : public Traveltime {
 
     public:
+        static unsigned int VELOCITY;
+
         CommonMidPoint();
 
         enum traveltime_t getModel() const override;
