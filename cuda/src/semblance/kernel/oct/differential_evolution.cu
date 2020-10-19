@@ -1,31 +1,5 @@
 #include "cuda/include/semblance/kernel/oct/common.cuh"
-#include "cuda/include/semblance/kernel/oct/linear_search.cuh"
-
-__global__
-void buildParameterArrayForOffsetContinuationTrajectory(
-    float* parameterArray,
-    float minVelocity,
-    float incrementVelocity,
-    unsigned int countVelocity,
-    float minSlope,
-    float incrementSlope,
-    unsigned int countSlope,
-    unsigned int totalParameterCount
-) {
-    unsigned int threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (threadIndex < totalParameterCount) {
-        unsigned int idxVelocity = (threadIndex / countSlope) % countVelocity;
-        unsigned int idxSlope = threadIndex % countSlope;
-
-        float v = minVelocity + static_cast<float>(idxVelocity) * incrementVelocity;
-        float slope = minSlope + static_cast<float>(idxSlope) * incrementSlope;
-
-        unsigned int offset = 2 * threadIndex;
-        parameterArray[offset] = 4.0f / (v * v);
-        parameterArray[offset + 1] = slope;
-    }
-}
+#include "cuda/include/semblance/kernel/oct/differential_evolution.cuh"
 
 __global__
 void computeSemblancesForOffsetContinuationTrajectory(
@@ -34,25 +8,21 @@ void computeSemblancesForOffsetContinuationTrajectory(
     const float *halfoffset,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
+    unsigned int individualsPerPopulation,
     float apm,
     float m0,
     float h0,
     float dtInSeconds,
     int tauIndexDisplacement,
     int windowSize,
-    /* Parameter arrays */
-    const float *parameterArray,
-    unsigned int totalParameterCount,
-    /* Output arrays */
+    unsigned int numberOfCommonResults,
     float* notUsedCountArray,
-    float *semblanceArray,
-    float *stackArray
+    const float *x,
+    float *fx
 ) {
-    unsigned int threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
-
-    unsigned int sampleIndex = threadIndex / totalParameterCount;
-    unsigned int parameterIndex = threadIndex % totalParameterCount;
-    unsigned int parameterOffset = 2 * parameterIndex;
+    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
+    unsigned int individualIndex = threadIndex % individualsPerPopulation;
 
     if (sampleIndex < samplesPerTrace) {
         enum gpu_error_code errorCode;
@@ -61,10 +31,13 @@ void computeSemblancesForOffsetContinuationTrajectory(
         float stack = 0;
         float mh, t;
 
+        unsigned int parameterOffset = (sampleIndex * individualsPerPopulation + individualIndex) * 2;
+
         float t0 = static_cast<float>(sampleIndex) * dtInSeconds;
 
-        float c = parameterArray[parameterOffset];
-        float slope = parameterArray[parameterOffset + 1];
+        float v = x[parameterOffset];
+        float c = 4.0f / (v * v);
+        float slope = x[parameterOffset + 1];
 
         float numeratorComponents[MAX_WINDOW_SIZE];
         float denominatorSum = 0;
@@ -91,7 +64,7 @@ void computeSemblancesForOffsetContinuationTrajectory(
             errorCode = computeTime(h, h0, t0, m0, m, mh, c, slope, &t);
 
             if (errorCode == NO_ERROR) {
-                float tIndex = t / dtInSeconds;
+                float tIndex = sqrt(t)/ dtInSeconds;
                 int kIndex = static_cast<int>(tIndex);
                 float dt = tIndex - static_cast<float>(kIndex);
             
@@ -130,40 +103,43 @@ void computeSemblancesForOffsetContinuationTrajectory(
 
         notUsedCountArray[threadIndex] += notUsedCount;
 
-        unsigned int offset = sampleIndex * totalParameterCount + parameterIndex;
-        semblanceArray[offset] = semblance;
-        stackArray[offset] = stack;
+        unsigned int offset = sampleIndex * individualsPerPopulation * numberOfCommonResults;
+        fx[offset] = semblance;
+        fx[offset + 1] = stack;
     }
 }
 
 __global__
-void selectBestSemblancesForOffsetContinuationTrajectory(
-    const float *semblanceArray,
-    const float *stackArray,
-    const float *parameterArray,
-    unsigned int totalParameterCount,
+void selectBestIndividualsForOffsetContinuationTrajectory(
+    const float* x,
+    const float* fx,
+    float* resultArray,
+    unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
-    float *resultArray
+    unsigned int numberOfCommonResults
 ) {
-    unsigned int sampleIndex = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
 
     if (sampleIndex < samplesPerTrace) {
-        unsigned int offset = sampleIndex * totalParameterCount;
+        unsigned int popIndex = sampleIndex * individualsPerPopulation * 2;
+        unsigned int fitnessIndex = sampleIndex * individualsPerPopulation * numberOfCommonResults;
 
         float bestSemblance = -1, bestStack, bestVelocity, bestSlope;
 
-        for (unsigned int parameterIndex = 0; parameterIndex < totalParameterCount; parameterIndex++) {
-            unsigned int offsetParameter = parameterIndex * 2;
+        for (unsigned int individualIndex = 0; individualIndex < individualsPerPopulation; individualIndex++) {
+            unsigned int featureOffset = fitnessIndex + individualIndex * numberOfCommonResults;
+            unsigned int individualOffset = popIndex + 2 * individualIndex;
 
-            float semblance = semblanceArray[offset + parameterIndex];
-            float stack = stackArray[offset + parameterIndex];
-            float c = parameterArray[offsetParameter];
-            float slope = parameterArray[offsetParameter + 1];
+            float semblance = fx[featureOffset];
+            float stack = fx[featureOffset + 1];
+            float velocity = x[individualOffset];
+            float slope = x[individualOffset + 1];
 
             if (semblance > bestSemblance) {
                 bestSemblance = semblance;
                 bestStack = stack;
-                bestVelocity = 2 / sqrt(c);
+                bestVelocity = velocity;
                 bestSlope = slope;
             }
         }
@@ -176,13 +152,13 @@ void selectBestSemblancesForOffsetContinuationTrajectory(
 }
 
 __global__
-void selectTracesForOffsetContinuationTrajectory(
+void selectTracesForOffsetContinuationTrajectoryAndDifferentialEvolution(
     const float *midpointArray,
     const float *halfoffsetArray,
-    const float *parameterArray,
-    unsigned int parameterCount,
+    const float *x,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
+    unsigned int individualsPerPopulation,
     float dtInSeconds,
     float apm,
     float m0,
@@ -200,11 +176,12 @@ void selectTracesForOffsetContinuationTrajectory(
         for (unsigned int sampleIndex = 0; !usedTraceMaskArray[traceIndex] && sampleIndex < samplesPerTrace; sampleIndex++) {
             float t0 = static_cast<float>(sampleIndex) * dtInSeconds;
 
-            for (unsigned int parameterIndex = 0; !usedTraceMaskArray[traceIndex] && parameterIndex < parameterCount; parameterIndex++) {
-                unsigned int parameterOffset = 2 * parameterIndex;
+            for (unsigned int individualIndex = 0; !usedTraceMaskArray[traceIndex] && individualIndex < individualsPerPopulation; individualIndex++) {
+                unsigned int individualOffset = (sampleIndex * individualsPerPopulation + individualIndex) * 2;
 
-                float c = parameterArray[parameterOffset];
-                float slope = parameterArray[parameterOffset + 1];
+                float v = x[individualOffset];
+                float c = 4.0f / (v * v);
+                float slope = x[individualOffset + 1];
 
                 enum gpu_error_code errorCode = computeDisplacedMidpoint(h, h0, t0, m0, c, slope, &mh);
 

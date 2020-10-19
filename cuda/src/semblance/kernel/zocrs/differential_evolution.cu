@@ -1,37 +1,5 @@
 #include "common/include/gpu/interface.h"
-#include "cuda/include/semblance/kernel/zocrs/linear_search.cuh"
-
-__global__
-void buildParameterArrayForZeroOffsetCommonReflectionSurface(
-    float* parameterArray,
-    float minVelocity,
-    float incrementVelocity,
-    unsigned int countVelocity,
-    float minA,
-    float incrementA,
-    unsigned int countA,
-    float minB,
-    float incrementB,
-    unsigned int countB,
-    unsigned int totalParameterCount
-) {
-    unsigned int threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (threadIndex < totalParameterCount) {
-        unsigned int idxVelocity = (threadIndex / (countA * countB)) % countVelocity;
-        unsigned int idxA = (threadIndex / countB) % countA;
-        unsigned int idxB = threadIndex % countB;
-
-        float v = minVelocity + static_cast<float>(idxVelocity) * incrementVelocity;
-        float a = minA + static_cast<float>(idxA) * incrementA;
-        float b = minB + static_cast<float>(idxB) * incrementB;
-
-        unsigned int offset = 3 * threadIndex;
-        parameterArray[offset] = 4.0f / (v * v);
-        parameterArray[offset + 1] = a;
-        parameterArray[offset + 2] = b;
-    }
-}
+#include "cuda/include/semblance/kernel/zocrs/differential_evolution.cuh"
 
 __global__
 void computeSemblancesForZeroOffsetCommonReflectionSurface(
@@ -40,32 +8,31 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
     const float *halfoffsetSquared,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
+    unsigned int individualsPerPopulation,
     float m0,
     float dtInSeconds,
     int tauIndexDisplacement,
     int windowSize,
-    /* Parameter arrays */
-    const float *parameterArray,
-    unsigned int totalParameterCount,
-    /* Output arrays */
-    float *semblanceArray,
-    float *stackArray
+    unsigned int numberOfCommonResults,
+    const float *x,
+    float *fx
 ) {
-    unsigned int threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
-
-    unsigned int sampleIndex = threadIndex / totalParameterCount;
-    unsigned int parameterIndex = threadIndex % totalParameterCount;
-    unsigned int parameterOffset = 3 * parameterIndex;
+    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
+    unsigned int individualIndex = threadIndex % individualsPerPopulation;
 
     if (sampleIndex < samplesPerTrace) {
         float semblance = 0;
         float stack = 0;
 
+        unsigned int parameterOffset = (sampleIndex * individualsPerPopulation + individualIndex) * 3;
+
         float t0 = static_cast<float>(sampleIndex) * dtInSeconds;
 
-        float c = parameterArray[parameterOffset];
-        float a = parameterArray[parameterOffset + 1];
-        float b = parameterArray[parameterOffset + 2];
+        float v = x[parameterOffset];
+        float c = 4.0f / (v * v);
+        float a = x[parameterOffset + 1];
+        float b = x[parameterOffset + 2];
 
         float numeratorComponents[MAX_WINDOW_SIZE];
         float denominatorSum = 0;
@@ -124,41 +91,44 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
             stack = linearSum / (usedCount * windowSize);
         }
 
-        unsigned int offset = sampleIndex * totalParameterCount + parameterIndex;
-        semblanceArray[offset] = semblance;
-        stackArray[offset] = stack;
+        unsigned int offset = sampleIndex * individualsPerPopulation * numberOfCommonResults;
+        fx[offset] = semblance;
+        fx[offset + 1] = stack;
     }
 }
 
 __global__
-void selectBestSemblancesForZeroOffsetCommonReflectionSurface(
-    const float *semblanceArray,
-    const float *stackArray,
-    const float *parameterArray,
-    unsigned int totalParameterCount,
+void selectBestIndividualsForZeroOffsetCommonReflectionSurface(
+    const float* x,
+    const float* fx,
+    float* resultArray,
+    unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
-    float *resultArray
+    unsigned int numberOfCommonResults
 ) {
-    unsigned int sampleIndex = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
 
     if (sampleIndex < samplesPerTrace) {
-        unsigned int offset = sampleIndex * totalParameterCount;
+        unsigned int popIndex = sampleIndex * individualsPerPopulation * 3;
+        unsigned int fitnessIndex = sampleIndex * individualsPerPopulation * numberOfCommonResults;
 
         float bestSemblance = -1, bestStack, bestVelocity, bestA, bestB;
 
-        for (unsigned int parameterIndex = 0; parameterIndex < totalParameterCount; parameterIndex++) {
-            unsigned int offsetParameter = parameterIndex * 3;
+        for (unsigned int individualIndex = 0; individualIndex < individualsPerPopulation; individualIndex++) {
+            unsigned int featureOffset = fitnessIndex + individualIndex * numberOfCommonResults;
+            unsigned int individualOffset = popIndex + 3 * individualIndex;
 
-            float semblance = semblanceArray[offset + parameterIndex];
-            float stack = stackArray[offset + parameterIndex];
-            float c = parameterArray[offsetParameter];
-            float a = parameterArray[offsetParameter + 1];
-            float b = parameterArray[offsetParameter + 2];
+            float semblance = fx[featureOffset];
+            float stack = fx[featureOffset + 1];
+            float velocity = x[individualOffset];
+            float a = x[individualOffset + 1];
+            float b = x[individualOffset + 2];
 
             if (semblance > bestSemblance) {
                 bestSemblance = semblance;
                 bestStack = stack;
-                bestVelocity = 2 / sqrt(c);
+                bestVelocity = velocity;
                 bestA = a;
                 bestB = b;
             }

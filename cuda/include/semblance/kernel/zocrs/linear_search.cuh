@@ -45,12 +45,3 @@ void selectBestSemblancesForZeroOffsetCommonReflectionSurface(
     unsigned int samplesPerTrace,
     float *resultArray
 );
-
-__global__
-void selectTracesForZeroOffsetCommonReflectionSurface(
-    const float* midpointArray,
-    unsigned int traceCount,
-    unsigned char* usedTraceMaskArray,
-    float m0,
-    float apm
-);

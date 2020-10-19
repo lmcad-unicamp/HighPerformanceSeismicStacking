@@ -1,20 +1,5 @@
 #include "common/include/gpu/interface.h"
-#include "cuda/include/semblance/kernel/cmp/linear_search.cuh"
-
-__global__
-void buildParameterArrayForCommonMidPoint(
-    float* parameterArray,
-    float minVelocity,
-    float increment,
-    unsigned int totalParameterCount
-) {
-    unsigned int threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (threadIndex < totalParameterCount) {
-        float v = minVelocity + static_cast<float>(threadIndex) * increment;
-        parameterArray[threadIndex] = 4.0f / (v * v);
-    }
-}
+#include "cuda/include/semblance/kernel/cmp/differential_evolution.cuh"
 
 __global__
 void computeSemblancesForCommonMidPoint(
@@ -22,28 +7,26 @@ void computeSemblancesForCommonMidPoint(
     const float *halfoffsetSquared,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
+    unsigned int individualsPerPopulation,
     float dtInSeconds,
     int tauIndexDisplacement,
     int windowSize,
-    /* Parameter arrays */
-    const float *parameterArray,
-    unsigned int totalParameterCount,
-    /* Output arrays */
-    float *semblanceArray,
-    float *stackArray
+    unsigned int numberOfCommonResults,
+    const float *x,
+    float *fx
 ) {
-    unsigned int threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
-
-    unsigned int sampleIndex = threadIndex / totalParameterCount;
-    unsigned int parameterIndex = threadIndex % totalParameterCount;
+    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
+    unsigned int individualIndex = threadIndex % individualsPerPopulation;
 
     if (sampleIndex < samplesPerTrace) {
         float semblance = 0;
         float stack = 0;
 
-        float t0 = static_cast<float>(sampleIndex) * dtInSeconds;
+        unsigned int parameterIndex = sampleIndex * individualsPerPopulation + individualIndex;
 
-        float c = parameterArray[parameterIndex];
+        float t0 = static_cast<float>(sampleIndex) * dtInSeconds;
+        float v = x[parameterIndex];
 
         float numeratorComponents[MAX_WINDOW_SIZE];
         float denominatorSum = 0;
@@ -59,7 +42,7 @@ void computeSemblancesForCommonMidPoint(
             float h_sq = halfoffsetSquared[traceIndex];
             const float *traceSamples = samples + traceIndex * samplesPerTrace;
 
-            float t = sqrt(t0 * t0 + c * h_sq);
+            float t = sqrt(t0 * t0 + 4 * h_sq / (v * v));
 
             float tIndex = t / dtInSeconds;
             int kIndex = static_cast<int>(tIndex);
@@ -97,37 +80,41 @@ void computeSemblancesForCommonMidPoint(
             stack = linearSum / (usedCount * windowSize);
         }
 
-        unsigned int offset = sampleIndex * totalParameterCount + parameterIndex;
-        semblanceArray[offset] = semblance;
-        stackArray[offset] = stack;
+        unsigned int offset = sampleIndex * individualsPerPopulation * numberOfCommonResults;
+        fx[offset] = semblance;
+        fx[offset + 1] = stack;
     }
 }
 
 __global__
-void selectBestSemblancesForCommonMidPoint(
-    const float *semblanceArray,
-    const float *stackArray,
-    const float *parameterArray,
-    unsigned int totalParameterCount,
+void selectBestIndividualsForCommonMidPoint(
+    const float* x,
+    const float* fx,
+    float* resultArray,
+    unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
-    float *resultArray
+    unsigned int numberOfCommonResults
 ) {
-    unsigned int sampleIndex = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
 
     if (sampleIndex < samplesPerTrace) {
-        unsigned int offset = sampleIndex * totalParameterCount;
+        unsigned int popIndex = sampleIndex * individualsPerPopulation;
+        unsigned int fitnessIndex = sampleIndex * individualsPerPopulation * numberOfCommonResults;
 
         float bestSemblance = -1, bestStack, bestVelocity;
 
-        for (unsigned int parameterIndex = 0; parameterIndex < totalParameterCount; parameterIndex++) {
-            float semblance = semblanceArray[offset + parameterIndex];
-            float stack = stackArray[offset + parameterIndex];
-            float c = parameterArray[parameterIndex];
-    
+        for (unsigned int individualIndex = 0; individualIndex < individualsPerPopulation; individualIndex++) {
+            unsigned int featureOffset = fitnessIndex + individualIndex * numberOfCommonResults;
+            
+            float semblance = fx[featureOffset];
+            float stack = fx[featureOffset + 1];
+            float velocity = x[popIndex + individualIndex];
+
             if (semblance > bestSemblance) {
                 bestSemblance = semblance;
                 bestStack = stack;
-                bestVelocity = 2 / sqrt(c);
+                bestVelocity = velocity;
             }
         }
 

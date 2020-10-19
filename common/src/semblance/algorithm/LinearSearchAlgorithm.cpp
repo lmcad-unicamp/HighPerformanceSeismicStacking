@@ -36,6 +36,8 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     deviceResultArray->reset();
     deviceNotUsedCountArray->reset();
+    commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]->reset();
+    commonResultDeviceArrayMap[SemblanceCommonResult::STACK]->reset();
 
     chrono::duration<double> selectionExecutionTime = chrono::duration<double>::zero();
     chrono::duration<double> totalExecutionTime = chrono::duration<double>::zero();
@@ -118,10 +120,8 @@ void LinearSearchAlgorithm::setupArrays() {
 
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
-    unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
     unsigned int numberOfResults = traveltime->getNumberOfResults();
     unsigned int numberOfSamples = gather->getSamplesPerTrace();
-    unsigned int parameterArrayStep = getParameterArrayStep();
 
     deviceParameterArray.reset(dataFactory->build(numberOfParameters * totalNumberOfParameters, deviceContext));
 

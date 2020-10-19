@@ -4,9 +4,6 @@
 #include <cuda.h>
 #include <curand_kernel.h>
 
-#define F_FAC 0.85f
-#define CR 0.5f
-
 __global__
 void kernelDifferentialEvolution(
     const float *samples,

@@ -6,9 +6,9 @@
 #include "cuda/include/execution/CudaUtils.hpp"
 #include "cuda/include/semblance/algorithm/CudaLinearSearchAlgorithm.hpp"
 #include "cuda/include/semblance/data/CudaDataContainer.hpp"
-#include "cuda/include/semblance/kernel/base.h"
-#include "cuda/include/semblance/kernel/linear_search.h"
+#include "cuda/include/semblance/kernel/cmp/common.cuh"
 #include "cuda/include/semblance/kernel/cmp/linear_search.cuh"
+#include "cuda/include/semblance/kernel/zocrs/common.cuh"
 #include "cuda/include/semblance/kernel/zocrs/linear_search.cuh"
 #include "cuda/include/semblance/kernel/oct/linear_search.cuh"
 
@@ -34,10 +34,6 @@ CudaLinearSearchAlgorithm::CudaLinearSearchAlgorithm(
 void CudaLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
     LOGI("Computing semblance for m0 = " << m0);
-
-    deviceResultArray->reset();
-    commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]->reset();
-    commonResultDeviceArrayMap[SemblanceCommonResult::STACK]->reset();
 
     if (!filteredTracesCount) {
         LOGI("No trace has been selected for m0 = " << m0 << ". Skipping.");
@@ -216,13 +212,6 @@ void CudaLinearSearchAlgorithm::initializeParameters() {
                 totalNumberOfParameters
             );
 
-            // vector<float> test (totalNumberOfParameters * 2);
-            // deviceParameterArray->pasteTo(test);
-
-            // for (int i = 0; i < totalNumberOfParameters; i++) {
-            //     cout << "(" << test[2*i] << ", " << test[2*i + 1] << ") ";
-            // }
-
             break;
         }
         default:
@@ -278,8 +267,8 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
             );
             break;
         case OCT: {
-            unsigned int initialPop = 1024;
-            vector<float> parameterSampleArray(initialPop * 2);
+            unsigned int samplePop = 1024;
+            vector<float> parameterSampleArray(samplePop * 2);
 
             default_random_engine generator;
     
@@ -290,12 +279,16 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
     
                 uniform_real_distribution<float> uniformDist(min, max);
     
-                for (unsigned int idx = 0; idx < initialPop; idx++) {
-                    parameterSampleArray[idx * 2 + prmtr] = uniformDist(generator);
+                for (unsigned int idx = 0; idx < samplePop; idx++) {
+                    float randomParameter = uniformDist(generator);
+                    if (prmtr == OffsetContinuationTrajectory::VELOCITY) {
+                        randomParameter = 4.0f / (randomParameter * randomParameter);
+                    }
+                    parameterSampleArray[idx * 2 + prmtr] = randomParameter;
                 }
             }
     
-            unique_ptr<DataContainer> selectionParameterArray(dataFactory->build(2 * initialPop, deviceContext));
+            unique_ptr<DataContainer> selectionParameterArray(dataFactory->build(2 * samplePop, deviceContext));
 
             selectionParameterArray->copyFrom(parameterSampleArray);
 
@@ -303,7 +296,7 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::HLFOFFST]),
                 CUDA_DEV_PTR(selectionParameterArray),
-                initialPop,
+                samplePop,
                 traceCount,
                 samplesPerTrace,
                 dtInSeconds,

@@ -2,6 +2,9 @@
 
 #include "common/include/capability.h"
 
+#define F_FAC 0.85f
+#define CR 0.5f
+
 #define MAX_PARAMETER_COUNT 3
 #define MAX_THREADS_PER_BLOCK 1024
 #define MAX_WINDOW_SIZE 32
