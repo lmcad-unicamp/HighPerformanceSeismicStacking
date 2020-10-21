@@ -6,7 +6,9 @@
 __global__
 void setupRandomSeed(
     curandState *state,
-    unsigned int seed
+    unsigned int seed,
+    unsigned int individualsPerPopulation,
+    unsigned int samplesPerTrace
 );
 
 __global__

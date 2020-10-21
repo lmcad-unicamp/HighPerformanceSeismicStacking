@@ -118,8 +118,7 @@ void selectBestIndividualsForOffsetContinuationTrajectory(
     unsigned int samplesPerTrace,
     unsigned int numberOfCommonResults
 ) {
-    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
-    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
+    unsigned int sampleIndex = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (sampleIndex < samplesPerTrace) {
         unsigned int popIndex = sampleIndex * individualsPerPopulation * 2;

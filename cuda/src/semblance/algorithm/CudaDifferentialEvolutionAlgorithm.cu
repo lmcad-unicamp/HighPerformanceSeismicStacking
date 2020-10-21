@@ -3,8 +3,7 @@
 #include "cuda/include/execution/CudaUtils.hpp"
 #include "cuda/include/semblance/algorithm/CudaDifferentialEvolutionAlgorithm.hpp"
 #include "cuda/include/semblance/data/CudaDataContainer.hpp"
-#include "cuda/include/semblance/kernel/base.h"
-#include "cuda/include/semblance/kernel/differential_evolution.h"
+#include "cuda/include/semblance/kernel/common/differential_evolution.cuh"
 #include "cuda/include/semblance/kernel/cmp/common.cuh"
 #include "cuda/include/semblance/kernel/cmp/differential_evolution.cuh"
 #include "cuda/include/semblance/kernel/zocrs/common.cuh"
@@ -33,13 +32,7 @@ CudaDifferentialEvolutionAlgorithm::~CudaDifferentialEvolutionAlgorithm() {
 }
 
 void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
-    
-    if (!filteredTracesCount) {
-        LOGI("No trace has been selected for m0 = " << m0 << ". Skipping.");
-        return;
-    }
 
-    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
     unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
 
     Gather* gather = Gather::getInstance();
@@ -48,6 +41,8 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
     float dtInSeconds = gather->getSamplePeriodInSeconds();
     int tauIndexDisplacement = gather->getTauIndexDisplacement();
     unsigned int windowSize = gather->getWindowSize();
+    float apm = gather->getApm();    
+    float h0 = traveltime->getReferenceHalfoffset();
 
     dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(individualsPerPopulation * samplesPerTrace) / static_cast<float>(threadCount))));
 
@@ -62,13 +57,48 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
                 dtInSeconds,
                 tauIndexDisplacement,
                 windowSize,
-                totalNumberOfParameters,
+                numberOfCommonResults,
                 CUDA_DEV_PTR(deviceParameterArray),
                 CUDA_DEV_PTR(deviceResultArray)
             );
             break;
         case ZOCRS:
+            computeSemblancesForZeroOffsetCommonReflectionSurface<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]),
+                filteredTracesCount,
+                samplesPerTrace,
+                individualsPerPopulation,
+                m0,
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                numberOfCommonResults,
+                CUDA_DEV_PTR(deviceParameterArray),
+                CUDA_DEV_PTR(deviceResultArray)
+            );
+            break;
         case OCT:
+            computeSemblancesForOffsetContinuationTrajectory<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]),
+                filteredTracesCount,
+                samplesPerTrace,
+                individualsPerPopulation,
+                apm,
+                m0,
+                h0,
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                numberOfCommonResults,
+                CUDA_DEV_PTR(deviceNotUsedCountArray),
+                CUDA_DEV_PTR(deviceParameterArray),
+                CUDA_DEV_PTR(deviceResultArray)
+            );
+            break;
         default:
             throw invalid_argument("Invalid traveltime model");
     }
@@ -85,7 +115,6 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
     Gather* gather = Gather::getInstance();
 
     unsigned int traceCount = gather->getTotalTracesCount();
-    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
 
     unsigned int samplesPerTrace = gather->getSamplesPerTrace();
     float dtInSeconds = gather->getSamplePeriodInSeconds();
@@ -137,6 +166,8 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
                 deviceUsedTraceMaskArray
             );
             break;
+        default:
+            throw invalid_argument("Invalid traveltime model");
     }
 
     CUDA_ASSERT(cudaGetLastError());
@@ -164,7 +195,7 @@ void CudaDifferentialEvolutionAlgorithm::setupRandomSeedArray() {
 
     srand(static_cast<unsigned int>(time(NULL)));
 
-    setupRandomSeed<<< dimGrid, threadCount >>>(st, rand());
+    setupRandomSeed<<< dimGrid, threadCount >>>(st, rand(), individualsPerPopulation, samplesPerTrace);
 
     CUDA_ASSERT(cudaGetLastError());
 
@@ -175,15 +206,18 @@ void CudaDifferentialEvolutionAlgorithm::startAllPopulations() {
 
     Gather* gather = Gather::getInstance();
 
-    dim3 dimGrid(gather->getSamplesPerTrace());
-
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
 
-    kernelStartPopulations<<< dimGrid, individualsPerPopulation >>>(
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(samplesPerTrace * individualsPerPopulation) / static_cast<float>(threadCount))));
+
+    startPopulations<<< dimGrid, threadCount >>>(
         CUDA_DEV_PTR(x),
         CUDA_DEV_PTR(min),
         CUDA_DEV_PTR(max),
         st,
+        individualsPerPopulation,
+        samplesPerTrace,
         numberOfParameters
     );
 
@@ -198,16 +232,19 @@ void CudaDifferentialEvolutionAlgorithm::mutateAllPopulations() {
 
     Gather* gather = Gather::getInstance();
 
-    dim3 dimGrid(gather->getSamplesPerTrace());
-
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
 
-    kernelmutateAllPopulations<<< dimGrid, individualsPerPopulation >>>(
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(samplesPerTrace * individualsPerPopulation) / static_cast<float>(threadCount))));
+
+    mutatePopulations<<< dimGrid, threadCount >>>(
         CUDA_DEV_PTR(v),
         CUDA_DEV_PTR(x),
         CUDA_DEV_PTR(min),
         CUDA_DEV_PTR(max),
         st,
+        individualsPerPopulation,
+        samplesPerTrace,
         numberOfParameters
     );
 
@@ -219,15 +256,18 @@ void CudaDifferentialEvolutionAlgorithm::crossoverPopulationIndividuals() {
 
     Gather* gather = Gather::getInstance();
 
-    dim3 dimGrid(gather->getSamplesPerTrace());
-
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
 
-    kernelCrossoverPopulationIndividuals<<< dimGrid, individualsPerPopulation >>>(
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(samplesPerTrace * individualsPerPopulation) / static_cast<float>(threadCount))));
+
+    crossoverPopulations<<< dimGrid, threadCount >>>(
         CUDA_DEV_PTR(u),
         CUDA_DEV_PTR(x),
         CUDA_DEV_PTR(v),
         st,
+        individualsPerPopulation,
+        samplesPerTrace,
         numberOfParameters
     );
 
@@ -239,16 +279,19 @@ void CudaDifferentialEvolutionAlgorithm::advanceGeneration() {
 
     Gather* gather = Gather::getInstance();
 
-    dim3 dimGrid(gather->getSamplesPerTrace());
-
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
     unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
 
-    kernelAdvanceGeneration<<< dimGrid, individualsPerPopulation >>>(
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(samplesPerTrace * individualsPerPopulation) / static_cast<float>(threadCount))));
+
+    nextGeneration<<< dimGrid, threadCount >>>(
         CUDA_DEV_PTR(x),
         CUDA_DEV_PTR(fx),
         CUDA_DEV_PTR(u),
         CUDA_DEV_PTR(fu),
+        individualsPerPopulation,
+        samplesPerTrace,
         numberOfParameters,
         numberOfCommonResults
     );
@@ -261,21 +304,46 @@ void CudaDifferentialEvolutionAlgorithm::selectBestIndividuals(vector<float>& re
 
     Gather* gather = Gather::getInstance();
 
-    dim3 dimGrid(gather->getSamplesPerTrace());
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
+    unsigned int numberOfParameters = traveltime->getNumberOfParameters();
+    unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
 
-    unsigned int numberOfResults = traveltime->getNumberOfResults();
-    unsigned int sharedMemCount = numberOfResults * individualsPerPopulation * static_cast<unsigned int>(sizeof(float));
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(samplesPerTrace) / static_cast<float>(threadCount))));
 
-    deviceResultArray.reset(dataFactory->build(numberOfResults * gather->getSamplesPerTrace(), deviceContext));
-
-    kernelSelectBestIndividuals<<< dimGrid, individualsPerPopulation, sharedMemCount >>>(
-        CUDA_DEV_PTR(x),
-        CUDA_DEV_PTR(fx),
-        CUDA_DEV_PTR(deviceResultArray),
-        traveltime->getNumberOfParameters(),
-        traveltime->getNumberOfCommonResults(),
-        gather->getSamplesPerTrace()
-    );
+    switch (traveltime->getModel()) {
+        case CMP:
+            selectBestIndividualsForCommonMidPoint<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(x),
+                CUDA_DEV_PTR(fx),
+                CUDA_DEV_PTR(deviceResultArray),
+                individualsPerPopulation,
+                samplesPerTrace,
+                numberOfCommonResults
+            );
+            break;
+        case ZOCRS:
+            selectBestIndividualsForZeroOffsetCommonReflectionSurface<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(x),
+                CUDA_DEV_PTR(fx),
+                CUDA_DEV_PTR(deviceResultArray),
+                individualsPerPopulation,
+                samplesPerTrace,
+                numberOfCommonResults
+            );
+            break;
+        case OCT:
+            selectBestIndividualsForOffsetContinuationTrajectory<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(x),
+                CUDA_DEV_PTR(fx),
+                CUDA_DEV_PTR(deviceResultArray),
+                individualsPerPopulation,
+                samplesPerTrace,
+                numberOfCommonResults
+            );
+            break;
+        default:
+            throw invalid_argument("Invalid traveltime model");
+    }
 
     CUDA_ASSERT(cudaGetLastError());
     CUDA_ASSERT(cudaDeviceSynchronize());

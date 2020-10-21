@@ -30,6 +30,7 @@ void DifferentialEvolutionAlgorithm::computeSemblanceAndParametersForMidpoint(fl
     deviceNotUsedCountArray->reset();
     fx->reset();
     fu->reset();
+    deviceResultArray->reset();
 
     /* Initialize population randomly */
     startAllPopulations();
@@ -91,13 +92,14 @@ void DifferentialEvolutionAlgorithm::setUp() {
     deviceContext->activate();
 
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
+    unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
     unsigned int numberOfResults = traveltime->getNumberOfResults();
     unsigned int numberOfSamples = gather->getSamplesPerTrace();
     unsigned int parameterArrayStep = getParameterArrayStep();
     unsigned int resultArrayStep = getResultArrayStep();
 
-    unsigned int parameterArraySize = gather->getSamplesPerTrace() * parameterArrayStep;
-    unsigned int commonResultArraySize = gather->getSamplesPerTrace() * resultArrayStep;
+    unsigned int parameterArraySize = numberOfSamples * individualsPerPopulation * numberOfParameters;
+    unsigned int commonResultArraySize = numberOfSamples * individualsPerPopulation * numberOfCommonResults;
 
     copyGatherDataToDevice();
 
@@ -114,7 +116,7 @@ void DifferentialEvolutionAlgorithm::setUp() {
     min->copyFrom(lowerBounds);
     max->copyFrom(upperBounds);
 
-    deviceNotUsedCountArray.reset(dataFactory->build(gather->getSamplesPerTrace() * individualsPerPopulation, deviceContext));
+    deviceNotUsedCountArray.reset(dataFactory->build(numberOfSamples * individualsPerPopulation, deviceContext));
 
     x.reset(dataFactory->build(parameterArraySize, deviceContext));
     u.reset(dataFactory->build(parameterArraySize, deviceContext));
@@ -122,6 +124,8 @@ void DifferentialEvolutionAlgorithm::setUp() {
 
     fx.reset(dataFactory->build(commonResultArraySize, deviceContext));
     fu.reset(dataFactory->build(commonResultArraySize, deviceContext));
+   
+    deviceResultArray.reset(dataFactory->build(numberOfResults * numberOfSamples, deviceContext));
 
     computedResults.resize(numberOfResults * numberOfSamples);
 

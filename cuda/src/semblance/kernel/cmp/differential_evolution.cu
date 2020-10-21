@@ -27,6 +27,7 @@ void computeSemblancesForCommonMidPoint(
 
         float t0 = static_cast<float>(sampleIndex) * dtInSeconds;
         float v = x[parameterIndex];
+        float c = 4.0f / (v * v);
 
         float numeratorComponents[MAX_WINDOW_SIZE];
         float denominatorSum = 0;
@@ -42,7 +43,7 @@ void computeSemblancesForCommonMidPoint(
             float h_sq = halfoffsetSquared[traceIndex];
             const float *traceSamples = samples + traceIndex * samplesPerTrace;
 
-            float t = sqrt(t0 * t0 + 4 * h_sq / (v * v));
+            float t = sqrt(t0 * t0 + c * h_sq);
 
             float tIndex = t / dtInSeconds;
             int kIndex = static_cast<int>(tIndex);
@@ -95,8 +96,7 @@ void selectBestIndividualsForCommonMidPoint(
     unsigned int samplesPerTrace,
     unsigned int numberOfCommonResults
 ) {
-    unsigned int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
-    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
+    unsigned int sampleIndex = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (sampleIndex < samplesPerTrace) {
         unsigned int popIndex = sampleIndex * individualsPerPopulation;
