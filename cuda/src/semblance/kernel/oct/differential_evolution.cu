@@ -64,7 +64,7 @@ void computeSemblancesForOffsetContinuationTrajectory(
             errorCode = computeTime(h, h0, t0, m0, m, mh, c, slope, &t);
 
             if (errorCode == NO_ERROR) {
-                float tIndex = sqrt(t)/ dtInSeconds;
+                float tIndex = t / dtInSeconds;
                 int kIndex = static_cast<int>(tIndex);
                 float dt = tIndex - static_cast<float>(kIndex);
             
@@ -103,7 +103,7 @@ void computeSemblancesForOffsetContinuationTrajectory(
 
         notUsedCountArray[threadIndex] += notUsedCount;
 
-        unsigned int offset = sampleIndex * individualsPerPopulation * numberOfCommonResults;
+        unsigned int offset = (sampleIndex * individualsPerPopulation + individualIndex) * numberOfCommonResults;
         fx[offset] = semblance;
         fx[offset + 1] = stack;
     }

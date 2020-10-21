@@ -81,7 +81,7 @@ void computeSemblancesForCommonMidPoint(
             stack = linearSum / (usedCount * windowSize);
         }
 
-        unsigned int offset = sampleIndex * individualsPerPopulation * numberOfCommonResults;
+        unsigned int offset = (sampleIndex * individualsPerPopulation + individualIndex) * numberOfCommonResults;
         fx[offset] = semblance;
         fx[offset + 1] = stack;
     }
