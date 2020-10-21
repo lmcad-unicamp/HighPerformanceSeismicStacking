@@ -25,11 +25,11 @@ ComputeAlgorithm* DifferentialEvolutionParser::parseComputeAlgorithm(
 
     generations = argumentMap["generations"].as<unsigned int>();
 
-    LOGH("Generations = " << generations);
+    LOGI("Generations = " << generations);
 
     individualsPerPopulation = argumentMap["population-size"].as<unsigned int>();
 
-    LOGH("Individuals per population = " << individualsPerPopulation);
+    LOGI("Individuals per population = " << individualsPerPopulation);
 
     ComputeAlgorithm* algorithm = builder->buildDifferentialEvolutionAlgorithm(traveltime, deviceContext, generations, individualsPerPopulation);
 
