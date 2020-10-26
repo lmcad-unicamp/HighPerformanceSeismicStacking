@@ -95,8 +95,6 @@ void DifferentialEvolutionAlgorithm::setUp() {
     unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
     unsigned int numberOfResults = traveltime->getNumberOfResults();
     unsigned int numberOfSamples = gather->getSamplesPerTrace();
-    unsigned int parameterArrayStep = getParameterArrayStep();
-    unsigned int resultArrayStep = getResultArrayStep();
 
     unsigned int parameterArraySize = numberOfSamples * individualsPerPopulation * numberOfParameters;
     unsigned int commonResultArraySize = numberOfSamples * individualsPerPopulation * numberOfCommonResults;

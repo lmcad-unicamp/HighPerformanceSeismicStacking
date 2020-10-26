@@ -45,7 +45,7 @@ void StretchFreeAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
         if ((idx + 1) % threadCount == 0 || (idx + 1) == totalNumberOfParameters) {
 
             if ((idx + 1) == totalNumberOfParameters) {
-                changeThreadCountTemporarilyTo((idx + 1) % threadCount);
+                // changeThreadCountTemporarilyTo((idx + 1) % threadCount);
             }
 
             deviceParameterArray->copyFrom(tempParameterArray);
@@ -54,7 +54,7 @@ void StretchFreeAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
         }
     }
 
-    restoreThreadCount();
+    // restoreThreadCount();
 
     deviceResultArray->pasteTo(computedResults);
 

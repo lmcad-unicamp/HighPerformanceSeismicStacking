@@ -25,12 +25,8 @@ LinearSearchAlgorithm::LinearSearchAlgorithm(
 void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
     Gather* gather = Gather::getInstance();
 
-    unsigned int numberOfParameters = traveltime->getNumberOfParameters();
     unsigned int numberOfSamplesPerTrace = gather->getSamplesPerTrace();
-    unsigned int parameterArrayStep = getParameterArrayStep();
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
-
-    vector<float> tempParameterArray(numberOfParameters * parameterArrayStep);
 
     deviceContext->activate();
 
@@ -44,7 +40,6 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
 
-    LOGI("parameterArrayStep = " << parameterArrayStep);
     LOGI("totalNumberOfParameters = " << totalNumberOfParameters);
 
     MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));

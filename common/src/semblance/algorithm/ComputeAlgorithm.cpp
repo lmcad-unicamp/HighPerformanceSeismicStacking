@@ -152,25 +152,11 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
         }
     }
 
-    // cout << endl;
-
-    // getchar();
-
     deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]->copyFrom(tempMidpoint);
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]->copyFrom(tempHalfoffset);
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]->copyFrom(tempHalfoffsetSquared);
 
     LOGI("Copy time is " << copyExecutionTime.count());
-}
-
-void ComputeAlgorithm::changeThreadCountTemporarilyTo(unsigned int t) {
-    LOGD("Updating threadCount to " << t);
-    threadCount = t;
-}
-
-void ComputeAlgorithm::restoreThreadCount() {
-    LOGD("Restoring threadCount to " << threadCountToRestore);
-    threadCount = threadCountToRestore;
 }
 
 void ComputeAlgorithm::setDeviceSourcePath(const string& path) {

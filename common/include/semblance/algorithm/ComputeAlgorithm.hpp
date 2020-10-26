@@ -56,10 +56,6 @@ class ComputeAlgorithm {
         // Functions
         //
 
-        void changeThreadCountTemporarilyTo(unsigned int t);
-
-        void restoreThreadCount();
-
     public:
         ComputeAlgorithm(
             const string& name,
