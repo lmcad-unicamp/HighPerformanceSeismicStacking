@@ -23,9 +23,6 @@ void StretchFreeAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
     unsigned int numberOfSamplesPerTrace = gather->getSamplesPerTrace();
-    unsigned int parameterArrayStep = getParameterArrayStep();
-
-    vector<float> tempParameterArray(parameterArrayStep);
 
     deviceContext->activate();
 
@@ -35,31 +32,13 @@ void StretchFreeAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
     chrono::duration<double> selectionExecutionTime = chrono::duration<double>::zero();
     chrono::duration<double> totalExecutionTime = chrono::duration<double>::zero();
 
-     MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
+    MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
 
-    unsigned int idx = 0;
-    for (int n = -NMAX; n <= NMAX; n++, idx++) {
-
-        tempParameterArray[idx % parameterArrayStep] = static_cast<float>(n);
-
-        if ((idx + 1) % threadCount == 0 || (idx + 1) == totalNumberOfParameters) {
-
-            if ((idx + 1) == totalNumberOfParameters) {
-                // changeThreadCountTemporarilyTo((idx + 1) % threadCount);
-            }
-
-            deviceParameterArray->copyFrom(tempParameterArray);
-
-            MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
-        }
-    }
-
-    // restoreThreadCount();
+    MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
 
     deviceResultArray->pasteTo(computedResults);
 
-    unsigned long totalUsedTracesCount;
-    totalUsedTracesCount = static_cast<unsigned long>(filteredTracesCount) *
+    unsigned long totalUsedTracesCount = static_cast<unsigned long>(filteredTracesCount) *
             static_cast<unsigned long>(numberOfSamplesPerTrace) *
             static_cast<unsigned long>(totalNumberOfParameters);
 
@@ -80,17 +59,27 @@ void StretchFreeAlgorithm::setUp() {
 
     unsigned int numberOfResults = traveltime->getNumberOfCommonResults() + 1;
     unsigned int numberOfSamples = gather->getSamplesPerTrace();
-    unsigned int parameterArrayStep = getParameterArrayStep();
+    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
 
     copyGatherDataToDevice();
 
-    deviceParameterArray.reset(dataFactory->build(parameterArrayStep, deviceContext));
-    deviceNotUsedCountArray.reset(dataFactory->build(numberOfSamples * parameterArrayStep, deviceContext));
+    deviceParameterArray.reset(dataFactory->build(totalNumberOfParameters, deviceContext));
+    deviceNotUsedCountArray.reset(dataFactory->build(numberOfSamples * totalNumberOfParameters, deviceContext));
     deviceResultArray.reset(dataFactory->build(numberOfResults * numberOfSamples, deviceContext));
 
     computedResults.resize(numberOfResults * numberOfSamples);
 
+    commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL].reset(dataFactory->build(numberOfSamples * totalNumberOfParameters, deviceContext));
+    commonResultDeviceArrayMap[SemblanceCommonResult::STACK].reset(dataFactory->build(numberOfSamples * totalNumberOfParameters, deviceContext));
+
     readNonStretchedFreeParameterFromFile();
+
+    vector<float> nArray(totalNumberOfParameters);
+    unsigned int idx = 0;
+    for (int n = -NMAX; n <= NMAX; n++, idx++) {
+        nArray[idx] = static_cast<float>(n);
+    }
+    deviceParameterArray->copyFrom(nArray);
 }
 
 const string StretchFreeAlgorithm::toString() const {

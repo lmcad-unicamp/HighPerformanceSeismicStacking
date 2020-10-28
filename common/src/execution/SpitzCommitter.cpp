@@ -1,5 +1,4 @@
 #include "common/include/parser/Parser.hpp"
-#include "common/include/output/Dumper.hpp"
 #include "common/include/output/Logger.hpp"
 #include "common/include/execution/SpitzCommitter.hpp"
 #include "common/include/traveltime/Traveltime.hpp"
@@ -13,8 +12,12 @@ using namespace std;
 SpitzCommitter::SpitzCommitter(
     shared_ptr<Traveltime> model,
     const string& folder,
-    const string& file
-) : traveltime(model), folderPath(folder), filePath(file) {
+    const string& file,
+    const string& computeMethod
+) : traveltime(model), 
+    folderPath(folder), 
+    filePath(file), 
+    dumper(folderPath, filePath, computeMethod, traveltime->getTraveltimeWord()) {
 
     Gather* gather = Gather::getInstance();
 
@@ -28,6 +31,8 @@ SpitzCommitter::SpitzCommitter(
     taskIndex = 0;
 
     startTimePoint = chrono::steady_clock::now();
+
+    dumper.createDir();
 
     LOGI("[CO] Committer created.");
 }
@@ -58,10 +63,6 @@ int SpitzCommitter::commit_task(spits::istream& result) {
 
 int SpitzCommitter::commit_job(const spits::pusher& final_result) {
 
-    Dumper dumper(folderPath, filePath);
-
-    dumper.createDir();
-
     dumper.dumpGatherParameters(filePath);
 
     for (unsigned int i = 0; i < traveltime->getNumberOfResults(); i++) {
@@ -81,6 +82,7 @@ int SpitzCommitter::commit_job(const spits::pusher& final_result) {
 
     chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
 
+    LOGI("[CO] Results written to " << dumper.getOutputDirectoryPath());
     LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
 
     return 0;

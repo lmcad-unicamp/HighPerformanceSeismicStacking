@@ -3,6 +3,7 @@
 #include "common/include/traveltime/TraveltimeBuilder.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <iostream>
 
 using namespace boost::program_options;
@@ -48,14 +49,7 @@ void Parser::parseArguments(int argc, const char *argv[]) {
 }
 
 const string Parser::getFilename() const {
-    const string& inputFile = getInputFilePath();
-    unsigned int datasetNameStartingIndex = static_cast<unsigned int>(inputFile.find_last_of("/")) + 1;
-
-    if (datasetNameStartingIndex == string::npos) {
-        datasetNameStartingIndex = 0;
-    }
-
-    return inputFile.substr(datasetNameStartingIndex);
+    return filesystem::path(getInputFilePath()).stem();
 }
 
 const string Parser::getInputFilePath() const {

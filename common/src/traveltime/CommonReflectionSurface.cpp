@@ -54,7 +54,7 @@ enum traveltime_t CommonReflectionSurface::getModel() const {
 }
 
 const string CommonReflectionSurface::getTraveltimeWord() const {
-    return "ZOCRS";
+    return "zocrs";
 }
 
 void CommonReflectionSurface::updateReferenceHalfoffset(float h0) {

@@ -12,7 +12,7 @@ enum traveltime_t CommonMidPoint::getModel() const {
 }
 
 const string CommonMidPoint::getTraveltimeWord() const {
-    return "CMP";
+    return "cmp";
 }
 
 void CommonMidPoint::updateReferenceHalfoffset(float h0) {

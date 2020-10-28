@@ -14,11 +14,15 @@ class StretchFreeParser : public Parser {
     public:
         StretchFreeParser();
 
+        Traveltime* parseTraveltime() const override;
+
         ComputeAlgorithm* parseComputeAlgorithm(
             ComputeAlgorithmBuilder* builder,
             shared_ptr<DeviceContext> deviceContext,
             shared_ptr<Traveltime> traveltime
         ) const override;
+
+        const string getParserType() const override;
 
         static Parser* getInstance();
 };

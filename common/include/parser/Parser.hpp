@@ -33,7 +33,7 @@ class Parser {
 
         LogLevel getLogVerbosity() const;
 
-        Traveltime* parseTraveltime() const;
+        virtual Traveltime* parseTraveltime() const;
 
         void printHelp() const;
 
@@ -46,4 +46,6 @@ class Parser {
             shared_ptr<DeviceContext> deviceContext,
             shared_ptr<Traveltime> traveltime
         ) const = 0;
+
+        virtual const string getParserType() const = 0;
 };

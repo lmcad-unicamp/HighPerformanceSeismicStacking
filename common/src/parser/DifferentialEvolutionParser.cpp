@@ -40,6 +40,10 @@ ComputeAlgorithm* DifferentialEvolutionParser::parseComputeAlgorithm(
     return algorithm;
 }
 
+const string DifferentialEvolutionParser::getParserType() const {
+    return "de";
+}
+
 Parser* DifferentialEvolutionParser::getInstance() {
     if (instance == nullptr) {
         instance = make_unique<DifferentialEvolutionParser>();

@@ -104,6 +104,10 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         traveltime.reset(parser->parseTraveltime());
 
+        Dumper dumper(parser->getOutputDirectory(), parser->getFilename(), parser->getParserType(), traveltime->getTraveltimeWord());
+
+        dumper.createDir();
+
         parser->readGather();
 
         for (auto it : gather->getCdps()) {
@@ -120,11 +124,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
             threads[deviceId].join();
         }
 
-        Dumper dumper(parser->getOutputDirectory(), parser->getFilename());
-
-        dumper.createDir();
-
-        dumper.dumpGatherParameters(parser->getFilename());
+        dumper.dumpGatherParameters(parser->getInputFilePath());
 
         dumper.dumpTraveltime(traveltime.get());
 
@@ -139,6 +139,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
 
+        LOGI("Results written to " << dumper.getOutputDirectoryPath());
         LOGI("It took " << totalExecutionTime.count() << "s to compute.");
 
         return 0;

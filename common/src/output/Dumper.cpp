@@ -3,23 +3,24 @@
 
 #include <boost/filesystem.hpp>
 #include <ctime>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 
 using namespace std;
 
-Dumper::Dumper(const string& path, const string& dirname) {
+Dumper::Dumper(const string& path, const string& dataFile, const string& computeMethod, const string& traveltime) {
     ostringstream outputFileStream;
 
     time_t t = time(NULL);
     tm* now = localtime(&t);
 
     outputFileStream << path << "/";
-    outputFileStream << dirname << "_";
-
-    outputFileStream << now->tm_mon + 1 << "_" << now->tm_mday << "_" << now->tm_hour << now->tm_min;
-
+    outputFileStream << dataFile << "_";
+    outputFileStream << computeMethod << "_";
+    outputFileStream << traveltime << "_";
+    outputFileStream << put_time(now, "%Y%m%d_%H%M");
     outputFileStream << "/";
 
     outputDirectoryPath = outputFileStream.str();
@@ -29,7 +30,7 @@ void Dumper::createDir() const {
     LOGI("Creating output directory at " << outputDirectoryPath);
 
     if (!boost::filesystem::create_directory(outputDirectoryPath)) {
-        throw invalid_argument("Directory couldn't be created");
+        throw runtime_error("Directory couldn't be created");
     }
 }
 
@@ -144,6 +145,9 @@ void Dumper::dumpTraveltime(Traveltime* model) const {
     modelOutputFile.close();
 }
 
+const string& Dumper::getOutputDirectoryPath() const {
+    return outputDirectoryPath;
+}
 
 // void Dumper::dumpExArguments(double totalElapsedTime) const {
 

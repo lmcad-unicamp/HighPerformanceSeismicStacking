@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/include/model/Gather.hpp"
+#include "common/include/output/Dumper.hpp"
 #include "common/include/semblance/result/ResultSet.hpp"
 
 #include <chrono>
@@ -21,6 +22,8 @@ class SpitzCommitter : public spits::committer {
 
         string folderPath, filePath;
 
+        Dumper dumper;
+
         unique_ptr<ResultSet> resultSet;
 
         unsigned int taskCount, taskIndex;
@@ -33,7 +36,8 @@ class SpitzCommitter : public spits::committer {
         SpitzCommitter(
             shared_ptr<Traveltime> traveltime,
             const string& folder,
-            const string& file
+            const string& file,
+            const string& computeMethod
         );
 
         int commit_task(spits::istream& result);

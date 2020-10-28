@@ -17,7 +17,7 @@ enum traveltime_t OffsetContinuationTrajectory::getModel() const {
 }
 
 const string OffsetContinuationTrajectory::getTraveltimeWord() const {
-    return "OCT";
+    return "oct";
 }
 
 void OffsetContinuationTrajectory::updateReferenceHalfoffset(float h0) {

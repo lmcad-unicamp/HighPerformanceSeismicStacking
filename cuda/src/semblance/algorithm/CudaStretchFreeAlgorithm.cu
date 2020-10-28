@@ -5,6 +5,12 @@
 #include "cuda/include/semblance/algorithm/CudaStretchFreeAlgorithm.hpp"
 #include "cuda/include/semblance/kernel/base.h"
 #include "cuda/include/semblance/kernel/stretch_free.h"
+#include "cuda/include/semblance/kernel/common/stretch_free.cuh"
+#include "cuda/include/semblance/kernel/cmp/common.cuh"
+#include "cuda/include/semblance/kernel/cmp/stretch_free.cuh"
+#include "cuda/include/semblance/kernel/zocrs/common.cuh"
+#include "cuda/include/semblance/kernel/zocrs/stretch_free.cuh"
+#include "cuda/include/semblance/kernel/oct/stretch_free.cuh"
 
 #include <cmath>
 #include <sstream>
@@ -21,33 +27,79 @@ CudaStretchFreeAlgorithm::CudaStretchFreeAlgorithm(
 }
 
 void CudaStretchFreeAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
+
+    LOGI("Computing semblance for m0 = " << m0);
+
+    if (!filteredTracesCount) {
+        LOGI("No trace has been selected for m0 = " << m0 << ". Skipping.");
+        return;
+    }
+
+    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
+    unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
+
     Gather* gather = Gather::getInstance();
 
-    dim3 dimGrid(gather->getSamplesPerTrace());
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
+    float dtInSeconds = gather->getSamplePeriodInSeconds();
+    int tauIndexDisplacement = gather->getTauIndexDisplacement();
+    unsigned int windowSize = gather->getWindowSize();
 
-    gpu_gather_data_t kernelData = gather->getGpuGatherData();
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(totalNumberOfParameters * samplesPerTrace) / static_cast<float>(threadCount))));
 
-    gpu_traveltime_data_t kerneltraveltime = traveltime->toGpuData();
+    switch (traveltime->getModel()) {
+        case CMP: {
+            computeSemblancesForCommonMidPoint<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]),
+                filteredTracesCount,
+                samplesPerTrace,
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                CUDA_DEV_PTR(nonStretchFreeParameters[m0]),
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])
+            );
+            break;
+        }
+        case ZOCRS: {
+            computeSemblancesForZeroOffsetCommonReflectionSurface<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]),
+                filteredTracesCount,
+                samplesPerTrace,
+                m0,
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                CUDA_DEV_PTR(nonStretchFreeParameters[m0]),
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])
+            );
+            break;
+        }
+        case OCT: {
+            break;
+        }
+        default:
+            throw invalid_argument("Invalid traveltime model");
+    }
 
-    gpu_reference_point_t kernelReferencePoint;
-    kernelReferencePoint.m0 = m0;
-    kernelReferencePoint.h0 = traveltime->getReferenceHalfoffset();
+    dim3 dimGridBest(static_cast<int>(ceil(static_cast<float>(samplesPerTrace) / static_cast<float>(threadCount))));
 
-    unsigned int sharedMemSizeCount =
-        (traveltime->getNumberOfCommonResults() + 1) * threadCount * static_cast<unsigned int>(sizeof(float));
-
-    kernelStretchFree<<< dimGrid, threadCount, sharedMemSizeCount >>>(
-        CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
-        CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
-        CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]),
-        filteredTracesCount,
-        CUDA_DEV_PTR(nonStretchFreeParameters[m0]),
-        kernelData,
-        kernelReferencePoint,
-        kerneltraveltime,
+    selectBestSemblances<<< dimGridBest, threadCount >>>(
+        CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+        CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK]),
         CUDA_DEV_PTR(deviceParameterArray),
-        CUDA_DEV_PTR(deviceResultArray),
-        CUDA_DEV_PTR(deviceNotUsedCountArray)
+        totalNumberOfParameters,
+        samplesPerTrace,
+        CUDA_DEV_PTR(deviceResultArray)
     );
 
     CUDA_ASSERT(cudaDeviceSynchronize());
@@ -59,60 +111,67 @@ void CudaStretchFreeAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
     Gather* gather = Gather::getInstance();
 
     unsigned int traceCount = gather->getTotalTracesCount();
+    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
+
+    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
+    float dtInSeconds = gather->getSamplePeriodInSeconds();
+    int tauIndexDisplacement = gather->getTauIndexDisplacement();
+    unsigned int windowSize = gather->getWindowSize();
+    float apm = gather->getApm();
 
     vector<unsigned char> usedTraceMask(traceCount);
 
     unsigned char* deviceUsedTraceMaskArray;
-    cudaMalloc((void **) &deviceUsedTraceMaskArray, traceCount * sizeof(char));
+    CUDA_ASSERT(cudaMalloc((void **) &deviceUsedTraceMaskArray, traceCount * sizeof(unsigned char)));
+    CUDA_ASSERT(cudaMemset(deviceUsedTraceMaskArray, 0, traceCount * sizeof(unsigned char)))
 
-    dim3 dimGrid(static_cast<int>(ceil(traceCount / threadCount)));
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(traceCount) / static_cast<float>(threadCount))));
 
-    gpu_gather_data_t gatherData = gather->getGpuGatherData();
+    LOGI("Using " << dimGrid.x << " blocks for traces filtering (threadCount = "<< threadCount << ")");
 
-    gpu_traveltime_data_t kerneltraveltime = traveltime->toGpuData();
-
-    gpu_reference_point_t kernelReferencePoint;
-    kernelReferencePoint.m0 = m0;
-    kernelReferencePoint.h0 = traveltime->getReferenceHalfoffset();
-
-    chrono::duration<double> kernelExecutionTime = chrono::duration<double>::zero();
     chrono::duration<double> copyTime = chrono::duration<double>::zero();
 
     switch (traveltime->getModel()) {
         case CMP:
-        case ZOCRS:
-            MEASURE_EXEC_TIME(kernelExecutionTime, (filterMidpointDependentTraces<<<dimGrid, threadCount>>>(
+            selectTracesForCommonMidPoint<<<dimGrid, threadCount>>>(
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
                 traceCount,
                 deviceUsedTraceMaskArray,
-                traveltime->toGpuData(),
-                gather->getApm(),
                 m0
-            )));
+            );
             break;
-
+        case ZOCRS:
+            selectTracesForZeroOffsetCommonReflectionSurface<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
+                traceCount,
+                deviceUsedTraceMaskArray,
+                m0,
+                apm
+            );
+            break;
         case OCT:
-            MEASURE_EXEC_TIME(kernelExecutionTime, (filterOutTracesForOffsetContinuationTrajectoryAndStretchFree<<<dimGrid, threadCount>>>(
+            selectTracesForOffsetContinuationTrajectory<<<dimGrid, threadCount>>>(
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::HLFOFFST]),
-                deviceUsedTraceMaskArray,
-                traceCount,
-                gatherData,
-                kernelReferencePoint,
-                kerneltraveltime,
                 CUDA_DEV_PTR(nonStretchFreeParameters[m0]),
-                gather->getSamplesPerTrace()
-            )));
+                traceCount,
+                samplesPerTrace,
+                dtInSeconds,
+                apm,
+                m0,
+                traveltime->getReferenceHalfoffset(),
+                deviceUsedTraceMaskArray
+            );
             break;
+        default:
+            throw invalid_argument("Invalid traveltime model");
     }
-
-    LOGI("Execution time for filtering kernel is " << kernelExecutionTime.count() << "s");
 
     CUDA_ASSERT(cudaDeviceSynchronize());
 
     CUDA_ASSERT(cudaGetLastError());
 
-    CUDA_ASSERT(cudaMemcpy(usedTraceMask.data(), deviceUsedTraceMaskArray, traceCount * sizeof(unsigned int), cudaMemcpyDeviceToHost));
+    CUDA_ASSERT(cudaMemcpy(usedTraceMask.data(), deviceUsedTraceMaskArray, traceCount * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
     CUDA_ASSERT(cudaFree(deviceUsedTraceMaskArray));
 

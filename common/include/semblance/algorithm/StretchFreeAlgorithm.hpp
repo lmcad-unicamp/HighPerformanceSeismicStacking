@@ -10,6 +10,8 @@
 
 class StretchFreeAlgorithm : public ComputeAlgorithm {
     protected:
+        unordered_map<SemblanceCommonResult, unique_ptr<DataContainer>> commonResultDeviceArrayMap;
+
         unordered_map<float, unique_ptr<DataContainer>> nonStretchFreeParameters;
 
         vector<string> parameterFileArray;

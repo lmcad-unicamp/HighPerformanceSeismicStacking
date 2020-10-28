@@ -1,6 +1,7 @@
 #include "cuda/include/semblance/algorithm/CudaComputeAlgorithmBuilder.hpp"
 #include "cuda/include/semblance/algorithm/CudaLinearSearchAlgorithm.hpp"
 #include "cuda/include/semblance/algorithm/CudaDifferentialEvolutionAlgorithm.hpp"
+#include "cuda/include/semblance/algorithm/CudaStretchFreeAlgorithm.hpp"
 #include "cuda/include/semblance/data/CudaDataContainerBuilder.hpp"
 
 #include <sstream>
@@ -47,9 +48,7 @@ DifferentialEvolutionAlgorithm* CudaComputeAlgorithmBuilder::buildDifferentialEv
 ) {
     DataContainerBuilder* dataFactory = CudaDataContainerBuilder::getInstance();
 
-    return new CudaDifferentialEvolutionAlgorithm(
-        traveltime, context, dataFactory, generation, individualsPerPopulation
-    );
+    return new CudaDifferentialEvolutionAlgorithm(traveltime, context, dataFactory, generation, individualsPerPopulation);
 }
 
 StretchFreeAlgorithm* CudaComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
@@ -66,8 +65,5 @@ StretchFreeAlgorithm* CudaComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
         throw logic_error(exceptionString.str());
     }
 
-    StretchFreeAlgorithm* computeAlgorithm = nullptr;
-        //make_shared<StretchFreeAlgorithm>(gather, traveltime, dataFactory, parameterFileArray);
-
-    return computeAlgorithm;
+    return new CudaStretchFreeAlgorithm(traveltime, context, dataFactory, parameterFileArray);
 }

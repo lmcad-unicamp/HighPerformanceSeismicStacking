@@ -34,6 +34,10 @@ ComputeAlgorithm* LinearSearchParser::parseComputeAlgorithm(
     return algorithm;
 }
 
+const string LinearSearchParser::getParserType() const {
+    return "greedy";
+}
+
 Parser* LinearSearchParser::getInstance() {
     if (instance == nullptr) {
         instance = make_unique<LinearSearchParser>();

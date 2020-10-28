@@ -19,7 +19,7 @@ class Dumper {
         string outputDirectoryPath;
 
     public:
-        Dumper(const string& path, const string& dirname);
+        Dumper(const string& path, const string& dataFile, const string& computeMethod, const string& traveltime);
 
         void createDir() const;
 
@@ -32,6 +32,8 @@ class Dumper {
         void dumpTraveltime(Traveltime* model) const;
 
         void dumpStatisticalResult(const string& statResultName, const StatisticalMidpointResult& statResult) const;
+
+        const string& getOutputDirectoryPath() const;
 
         //void dumpAll(const SemblanceHostResult& results, float totalElapsedTime) const;
 };

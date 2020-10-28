@@ -19,5 +19,7 @@ class DifferentialEvolutionParser : public Parser {
             shared_ptr<Traveltime> traveltime
         ) const override;
 
+        const string getParserType() const override;
+
         static Parser* getInstance();
 };

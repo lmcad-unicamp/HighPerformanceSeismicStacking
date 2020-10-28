@@ -31,7 +31,7 @@ class Traveltime {
 
         unsigned int getIndexForCommonResult(SemblanceCommonResult r) const;
 
-        unsigned int getNumberOfParameters() const;
+        virtual unsigned int getNumberOfParameters() const;
 
         unsigned int getNumberOfCommonResults() const;
 
@@ -41,7 +41,7 @@ class Traveltime {
 
         const string getDescriptionForResult(unsigned int i) const;
 
-        float getReferenceHalfoffset() const;
+        virtual float getReferenceHalfoffset() const;
 
         void updateLowerBoundForParameter(unsigned int p, float min);
 

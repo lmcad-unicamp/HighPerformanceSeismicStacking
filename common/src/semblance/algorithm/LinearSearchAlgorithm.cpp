@@ -109,8 +109,6 @@ unsigned int LinearSearchAlgorithm::getParameterArrayStep() const {
 }
 
 void LinearSearchAlgorithm::setupArrays() {
-    ostringstream stringStream;
-
     Gather* gather = Gather::getInstance();
 
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
