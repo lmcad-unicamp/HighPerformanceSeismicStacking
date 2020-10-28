@@ -19,7 +19,7 @@ ifeq ($(ENABLE_PROFILING), yes)
 	NVCCFLAGS += -DPROFILE_ENABLED -lineinfo
 endif
 
-LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -lcuda
+LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -lstdc++fs -lcuda
 CFLAGS += -Wall -fPIC -std=c++17 -Wno-sign-conversion
 NVCCFLAGS += --use_fast_math -Xcompiler -Wall -Xcompiler -fPIC -lcurand -arch $(ARCH)
 
