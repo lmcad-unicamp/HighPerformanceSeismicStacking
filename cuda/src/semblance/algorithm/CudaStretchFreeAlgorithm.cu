@@ -3,8 +3,6 @@
 #include "cuda/include/execution/CudaUtils.hpp"
 #include "cuda/include/semblance/data/CudaDataContainer.hpp"
 #include "cuda/include/semblance/algorithm/CudaStretchFreeAlgorithm.hpp"
-#include "cuda/include/semblance/kernel/base.h"
-#include "cuda/include/semblance/kernel/stretch_free.h"
 #include "cuda/include/semblance/kernel/common/stretch_free.cuh"
 #include "cuda/include/semblance/kernel/cmp/common.cuh"
 #include "cuda/include/semblance/kernel/cmp/stretch_free.cuh"
