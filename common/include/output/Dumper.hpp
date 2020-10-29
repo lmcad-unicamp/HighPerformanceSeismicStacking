@@ -10,8 +10,6 @@
 #include <memory>
 #include <string>
 
-#define MAX_FILE_DIR_L 256
-
 using namespace std;
 
 class Dumper {
@@ -34,6 +32,4 @@ class Dumper {
         void dumpStatisticalResult(const string& statResultName, const StatisticalMidpointResult& statResult) const;
 
         const string& getOutputDirectoryPath() const;
-
-        //void dumpAll(const SemblanceHostResult& results, float totalElapsedTime) const;
 };

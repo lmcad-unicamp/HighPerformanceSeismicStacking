@@ -15,9 +15,8 @@ SpitzCommitter::SpitzCommitter(
     const string& file,
     const string& computeMethod
 ) : traveltime(model), 
-    folderPath(folder), 
     filePath(file), 
-    dumper(folderPath, filePath, computeMethod, traveltime->getTraveltimeWord()) {
+    dumper(folder, file, computeMethod, traveltime->getTraveltimeWord()) {
 
     Gather* gather = Gather::getInstance();
 

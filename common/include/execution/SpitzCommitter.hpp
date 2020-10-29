@@ -20,7 +20,7 @@ class SpitzCommitter : public spits::committer {
 
         shared_ptr<Traveltime> traveltime;
 
-        string folderPath, filePath;
+        string filePath;
 
         Dumper dumper;
 

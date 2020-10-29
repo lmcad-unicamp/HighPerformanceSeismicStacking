@@ -17,7 +17,6 @@ float SharedMidpointQueue::dequeueMidpoint() {
         throw length_error("Queue is empty.");
     }
 
-
     float ret = sharedMidpointQueue.front();
     sharedMidpointQueue.pop();
 
