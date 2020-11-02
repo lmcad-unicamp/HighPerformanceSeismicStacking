@@ -34,7 +34,7 @@ ComputeAlgorithm* DifferentialEvolutionParser::parseComputeAlgorithm(
     ComputeAlgorithm* algorithm = builder->buildDifferentialEvolutionAlgorithm(traveltime, deviceContext, generations, individualsPerPopulation);
 
     if (argumentMap.count("kernel-path")) {
-        algorithm->setDeviceSourcePath(argumentMap["kernel-path"].as<string>());
+        algorithm->compileKernels(argumentMap["kernel-path"].as<string>());
     }
 
     return algorithm;

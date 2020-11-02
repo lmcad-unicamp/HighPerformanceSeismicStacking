@@ -1,3 +1,9 @@
+SHELL = /bin/bash
+
+#
+# Compiler flags
+#
+
 ENABLE_DEBUG := no
 ifeq ($(ENABLE_DEBUG), yes)
 	CFLAGS += -g -O0
@@ -5,54 +11,40 @@ else
 	CFLAGS += -O3
 endif
 
-CFLAGS += -Wconversion
+CFLAGS += -Wall -fPIC -std=c++17 -Wno-sign-conversion
 
-LDFLAGS += -lm -lOpenCL -pthread
+LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lstdc++fs -lm -lOpenCL -pthread
 
-COMMON_FLDR ?= ../common
-BIN_FLDR ?= bin
+#
+# Folder paths
+#
 
-common_include = ${COMMON_FLDR}/include/
-common_src = $(wildcard ${COMMON_FLDR}/src/*.cpp)
-common_obj = $(common_src:.cpp=.o)
+PROJECT_ROOT_PATH = ..
+BINARY_PATH = $(PROJECT_ROOT_PATH)/opencl/bin/
+SINGLE_HOST_PATH = $(PROJECT_ROOT_PATH)/opencl/main/single_host
+SPITS_PATH = $(PROJECT_ROOT_PATH)/opencl/main/spitz
 
-include = include/
-src = $(wildcard src/*.cpp)
-obj = $(src:.cpp=.o)
+CPP_SOURCE = $(shell find $(PROJECT_ROOT_PATH)/{common,opencl}/src -name '*.cpp')
+CPP_OBJECT = $(CPP_SOURCE:.cpp=.o)
 
-SPITZ_FLDR ?= ../spitz
-spitz_include = $(SPITZ_FLDR)/spitz-include/ccpp/
-CFLAGS += -fPIC
+SPITS_LIBRARY_PATH = $(PROJECT_ROOT_PATH)/spits/API/include/
 
 %.o: %.cpp
-	g++ -o $@ -c $< -I${common_include} -I${include} -I${spitz_include} $(CFLAGS)
+	g++ -o $@ -c $< -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(CFLAGS)
 
-cmp-crs-crp: cmp-crs-crp.cpp $(obj) $(common_obj)
-	mkdir -p ${BIN_FLDR}
-	g++ -o  ${BIN_FLDR}/$@ -I${common_include} -I${include} $^ $(LDFLAGS) $(CFLAGS)
+dependencies: $(CPP_OBJECT)
 
-cmp-crs-crp-ga: cmp-crs-crp-ga.cpp $(obj) $(common_obj)
-	mkdir -p ${BIN_FLDR}
-	g++ -o ${BIN_FLDR}/$@ -I${common_include} -I${include} $^ $(LDFLAGS) $(CFLAGS)
+single_host_linear_search: $(SINGLE_HOST_PATH)/linear_search.cpp $(CPP_OBJECT)
+	g++ -o $(BINARY_PATH)/$@ $^ -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(LDFLAGS)
 
-stack: stack.cpp $(obj) $(common_obj)
-	mkdir -p ${BIN_FLDR}
-	g++ -o ${BIN_FLDR}/$@ -I${common_include} -I${include} $^ $(LDFLAGS) $(CFLAGS)
+single_host_de: $(SINGLE_HOST_PATH)/differential_evolution.cpp $(CPP_OBJECT)
+	g++ -o $(BINARY_PATH)/$@ $^ -I$(PROJECT_ROOT_PATH) -I${SPITS_LIBRARY_PATH} $(LDFLAGS)
 
-spitz: spitz.cpp $(obj) $(common_obj)
-	mkdir -p ${BIN_FLDR}
-	g++ -o ${BIN_FLDR}/$@ -I${common_include} -I${include} -I${spitz_include} $^ $(LDFLAGS) $(CFLAGS) -shared
+single_host_stretch_free: $(SINGLE_HOST_PATH)/stretch_free.cpp $(CPP_OBJECT)
+	g++ -o $(BINARY_PATH)/$@ $^ -I$(PROJECT_ROOT_PATH) -I${SPITS_LIBRARY_PATH} $(LDFLAGS)
 
-spitz-ga: spitz-ga.cpp $(obj) $(common_obj)
-	mkdir -p ${BIN_FLDR}
-	g++ -o ${BIN_FLDR}/$@ -I${common_include} -I${include} -I${spitz_include} $^ $(LDFLAGS) $(CFLAGS) -shared
-
-spitz-stack: spitz-stack.cpp $(obj) $(common_obj)
-	mkdir -p ${BIN_FLDR}
-	g++ -o ${BIN_FLDR}/$@ -I${common_include} -I${include} -I${spitz_include} $^ $(LDFLAGS) $(CFLAGS) -shared
-
-all: cmp-crs-crp cmp-crs-crp-ga spitz spitz-ga stack spitz-stack
+all: single_host_linear_search
 
 clean:
-	rm -rf ${BIN_FLDR}/
-	rm -rf $(obj) $(common_obj)
+	rm -rf $(CPP_OBJECT)
+	rm -rf $(BINARY_PATH)/*

@@ -1,26 +1,23 @@
 #pragma once
 
 #include "common/include/semblance/data/DataContainer.hpp"
-#include "opencl/include/semblance/data/context.hpp"
+#include "opencl/include/execution/OpenCLUtils.hpp"
 
-#include <CL/cl2.hpp>
 #include <memory>
 
-#define OPENCL_DEV_PTR(_ptr) dynamic_cast<OpenCLDataContainer>(_ptr)->getOpenClAddress()
+#define OPENCL_DEV_BUFFER(_ptr) dynamic_cast<OpenCLDataContainer*>(_ptr.get())->getBuffer()
 
 using namespace std;
 
 class OpenCLDataContainer : public DataContainer {
 
     private:
-        unique_ptr<cl::Buffer> openClAddress;
-        shared_ptr<DeviceContext> context;
+        unique_ptr<cl::Buffer> openClBuffer;
 
     public:
         OpenCLDataContainer(unsigned int elementCount, shared_ptr<DeviceContext> context);
-        ~OpenCLDataContainer();
 
-        cl::Buffer* getOpenClAddress() const;
+        cl::Buffer& getBuffer() const;
 
         void allocate() override;
 
@@ -33,6 +30,4 @@ class OpenCLDataContainer : public DataContainer {
         void pasteTo(std::vector<float>& targetArray) override;
 
         void reset() override;
-
-        void reallocate(unsigned int newElementCount) override;
 };

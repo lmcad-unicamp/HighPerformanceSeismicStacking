@@ -26,7 +26,7 @@ ComputeAlgorithm* StretchFreeParser::parseComputeAlgorithm(
     ComputeAlgorithm* algorithm = builder->buildStretchFreeAlgorithm(traveltime, deviceContext, nonStretchFreeParameterFiles);
 
     if (argumentMap.count("kernel-path")) {
-        algorithm->setDeviceSourcePath(argumentMap["kernel-path"].as<string>());
+        algorithm->compileKernels(argumentMap["kernel-path"].as<string>());
     }
 
     return algorithm;

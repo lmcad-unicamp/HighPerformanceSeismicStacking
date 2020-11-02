@@ -137,8 +137,6 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
 
         if (usedTraceMask[i]) {
 
-            // cout << (usedTraceMask[i] ? 1 : 0) << "(" << i << ") ";
-
             const Trace& trace = gather->getTraceAtIndex(i);
 
             MEASURE_EXEC_TIME(copyExecutionTime, deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]->copyFromWithOffset(trace.getSamples(), cudaArrayOffset));
@@ -159,6 +157,5 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
     LOGI("Copy time is " << copyExecutionTime.count());
 }
 
-void ComputeAlgorithm::setDeviceSourcePath(const string& path) {
-    deviceSource = path;
+void ComputeAlgorithm::compileKernels(const string& deviceKernelSourcePath) {
 }

@@ -28,7 +28,7 @@ ComputeAlgorithm* LinearSearchParser::parseComputeAlgorithm(
     ComputeAlgorithm* algorithm = builder->buildLinearSearchAlgorithm(traveltime, deviceContext, discretizationGranularity);
 
     if (argumentMap.count("kernel-path")) {
-        algorithm->setDeviceSourcePath(argumentMap["kernel-path"].as<string>());
+        algorithm->compileKernels(argumentMap["kernel-path"].as<string>());
     }
 
     return algorithm;

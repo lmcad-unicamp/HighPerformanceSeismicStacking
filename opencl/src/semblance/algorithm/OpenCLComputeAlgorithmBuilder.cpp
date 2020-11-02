@@ -1,6 +1,7 @@
 #include "opencl/include/semblance/algorithm/OpenCLComputeAlgorithmBuilder.hpp"
 #include "opencl/include/semblance/algorithm/OpenCLLinearSearchAlgorithm.hpp"
 #include "opencl/include/semblance/algorithm/OpenCLDifferentialEvolutionAlgorithm.hpp"
+#include "opencl/include/semblance/algorithm/OpenCLStretchFreeAlgorithm.hpp"
 #include "opencl/include/semblance/data/OpenCLDataContainerBuilder.hpp"
 
 #include <memory>
@@ -48,9 +49,7 @@ DifferentialEvolutionAlgorithm* OpenCLComputeAlgorithmBuilder::buildDifferential
 ) {
     DataContainerBuilder* dataFactory = OpenCLDataContainerBuilder::getInstance();
 
-    return new OpenCLDifferentialEvolutionAlgorithm(
-        traveltime, context, dataFactory, generation, individualsPerPopulation
-    );
+    return new OpenCLDifferentialEvolutionAlgorithm(traveltime, context, dataFactory, generation, individualsPerPopulation);
 }
 
 StretchFreeAlgorithm* OpenCLComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
@@ -67,8 +66,5 @@ StretchFreeAlgorithm* OpenCLComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
         throw logic_error(exceptionString.str());
     }
 
-    StretchFreeAlgorithm* computeAlgorithm = nullptr;
-        //make_shared<StretchFreeAlgorithm>(gather, traveltime, dataFactory, parameterFileArray);
-
-    return computeAlgorithm;
+    return new OpenCLStretchFreeAlgorithm(traveltime, context, dataFactory, parameterFileArray);
 }

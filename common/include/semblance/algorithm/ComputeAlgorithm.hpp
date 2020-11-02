@@ -84,11 +84,10 @@ class ComputeAlgorithm {
             chrono::duration<double> selectionExecutionTime
         );
 
-        void setDeviceSourcePath(const string& path);
-
         //
         // Virtual methods.
         //
+        virtual void compileKernels(const string& deviceKernelSourcePath);
 
         virtual void computeSemblanceAndParametersForMidpoint(float m0) = 0;
         virtual void computeSemblanceAtGpuForMidpoint(float m0) = 0;

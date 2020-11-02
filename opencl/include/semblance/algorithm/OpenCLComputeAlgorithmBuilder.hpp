@@ -9,7 +9,6 @@ using namespace std;
 class OpenCLComputeAlgorithmBuilder : public ComputeAlgorithmBuilder {
     protected:
         static unique_ptr<ComputeAlgorithmBuilder> instance;
-
     public:
         static ComputeAlgorithmBuilder* getInstance();
 

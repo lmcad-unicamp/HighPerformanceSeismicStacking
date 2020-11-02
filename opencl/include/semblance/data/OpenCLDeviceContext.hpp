@@ -1,12 +1,16 @@
 #pragma once
 
-#include <CL/cl2.hpp>
+#include "common/include/semblance/data/DeviceContext.hpp"
+#include "opencl/include/execution/OpenCLUtils.hpp"
+
 #include <memory>
 #include <string>
 
 using namespace std;
 
-class OpenCLDeviceContext : public DeviceContext{
+#define OPENCL_CONTEXT_PTR(context_ptr) dynamic_cast<OpenCLDeviceContext*>(context_ptr.get())
+
+class OpenCLDeviceContext : public DeviceContext { 
 
     private:
         unique_ptr<cl::Platform> platform;
@@ -16,9 +20,10 @@ class OpenCLDeviceContext : public DeviceContext{
 
     public:
         OpenCLDeviceContext(unsigned int deviceId);
-        OpenCLDeviceContext(const cl::Platform& p, const cl::Device& d);
 
-        cl::Context* getContext();
-        cl::CommandQueue* getCommandQueue();
-        cl::Device* getDevice();
+        cl::Context& getContext();
+        cl::CommandQueue& getCommandQueue();
+        cl::Device& getDevice();
+
+        void activate() const override;
 };

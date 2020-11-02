@@ -1,4 +1,5 @@
 #include "common/include/output/Logger.hpp"
+#include "opencl/include/execution/OpenCLUtils.hpp"
 #include "opencl/include/semblance/data/OpenCLDeviceContext.hpp"
 
 #include <memory>
@@ -8,96 +9,53 @@
 
 using namespace std;
 
-OpenCLDeviceContext::OpenCLDeviceContext(unsigned int deviceId) {
-
+OpenCLDeviceContext::OpenCLDeviceContext(unsigned int deviceId) : DeviceContext(deviceId) {
     vector<cl::Platform> platforms;
     vector<cl::Device> devicesPerPlatform;
 
-    // Get platform and device information
-    unsigned int numbeOfDevices;
-    unsigned int numberOfPlatforms;
+    OPENCL_ASSERT(cl::Platform::get(&platforms));
 
-    cl_int errorCode = cl::Platform::get(&platforms);
+    unsigned int numberOfPlatforms = static_cast<unsigned int>(platforms.size());
 
-    if (errorCode != CL_SUCCESS) {
-        ostringstream stringStream;
-        stringStream << "Getting platform failed with error " << errorCode;
-        throw runtime_error(stringStream.str());
-    }
-
-    unsigned int deviceCount = 0;
+    int deviceCount = static_cast<int>(deviceId);
     bool foundDevice = false;
     for (unsigned int platformId = 0; platformId < numberOfPlatforms && !foundDevice; platformId++) {
 
-        errorCode = platforms[platformId].getDevices(CL_DEVICE_TYPE_GPU, &devicesPerPlatform);
+        OPENCL_ASSERT(platforms[platformId].getDevices(CL_DEVICE_TYPE_GPU, &devicesPerPlatform));
 
-        if (errorCode != CL_SUCCESS) {
-            ostringstream stringStream;
-            stringStream << "Getting devices failed with error " << errorCode;
-            throw runtime_error(stringStream.str());
+        int devicePerPlatformCount = static_cast<int>(devicesPerPlatform.size());
+
+        if (deviceCount - devicePerPlatformCount > 0) {
+            deviceCount -= devicePerPlatformCount;
+            continue;
         }
 
-        for (unsigned int deviceId = 0; deviceId < devicesPerPlatform.size(); deviceId++, deviceCount++) {
-            if (deviceId == deviceCount) {
-                platform = make_unique<cl::Platform>(new cl::Platform(platforms[platformId]));
-                device = make_unique<cl::Device>(new cl::Device(devicesPerPlatform[deviceId]));
-                foundDevice = true;
-                break;
-            }
-        }
+        foundDevice = true;
+        platform = make_unique<cl::Platform>(platforms[platformId]);
+        device = make_unique<cl::Device>(devicesPerPlatform[deviceCount]);
     }
 
     if (foundDevice) {
-        context = make_unique<cl::Context>(*device, &errorCode);
-
-        if (errorCode != CL_SUCCESS) {
-            ostringstream stringStream;
-            stringStream << "Creating OpenCl's context failed with error " << errorCode;
-            throw runtime_error(stringStream.str());
-        }
-
-        commandQueue = make_unique<cl::CommandQueue>(*context, *device, &errorCode);
-
-        if (errorCode != CL_SUCCESS) {
-            ostringstream stringStream;
-            stringStream << "Creating OpenCl's command queue failed with error " << errorCode;
-            throw runtime_error(stringStream.str());
-        }
+        context = make_unique<cl::Context>(*device);
+        commandQueue = make_unique<cl::CommandQueue>(*context, *device);
     }
 
     throw runtime_error("Couldn't find device.");
 }
 
-OpenCLDeviceContext::OpenCLDeviceContext(const cl::Platform& p, const cl::Device& d) {
-
-    cl_int errorCode;
-
-    platform = make_unique<cl::Platform>(new cl::Platform(p));
-    device = make_unique<cl::Device>(new cl::Device(d));
-
-    context = make_unique<cl::Context>(*device, &errorCode);
-
-    if (errorCode != CL_SUCCESS) {
-        ostringstream stringStream;
-        stringStream << "Creating OpenCl's context failed with error " << errorCode;
-        throw runtime_error(stringStream.str());
-    }
-
-    commandQueue = make_unique<cl::CommandQueue>(*context, *device, &errorCode);
-
-    if (errorCode != CL_SUCCESS) {
-        ostringstream stringStream;
-        stringStream << "Creating OpenCl's command queue failed with error " << errorCode;
-        throw runtime_error(stringStream.str());
-    }
+cl::Context& OpenCLDeviceContext::getContext() {
+    return *context;
 }
 
-cl::Context* OpenCLDeviceContext::getContext() {
-    return context.get();
+cl::CommandQueue& OpenCLDeviceContext::getCommandQueue() {
+    return *commandQueue;
 }
 
-cl::CommandQueue* getCommandQueue() {
-    return commandQueue.get();
+cl::Device& OpenCLDeviceContext::getDevice() {
+    return *device;
+}
+
+void OpenCLDeviceContext::activate() const {
 }
 
 // void OpenCLDeviceContext::compile(std::string pth) {

@@ -1,7 +1,8 @@
-#include "common/include/output/log.hpp"
-#include "opencl/include/semblance/data/container.hpp"
+#include "common/include/output/Logger.hpp"
+#include "opencl/include/execution/OpenCLUtils.hpp"
+#include "opencl/include/semblance/data/OpenCLDataContainer.hpp"
+#include "opencl/include/semblance/data/OpenCLDeviceContext.hpp"
 
-#include <CL/cl2.hpp>
 #include <sstream>
 #include <stdexcept>
 
@@ -14,27 +15,23 @@ OpenCLDataContainer::OpenCLDataContainer(
     allocate();
 }
 
-cl::Buffer* OpenCLDataContainer::getOpenClAddress() const {
-    return openClAddress.get();
+cl::Buffer& OpenCLDataContainer::getBuffer() const {
+    return *openClBuffer;
 }
 
 void OpenCLDataContainer::allocate() {
     cl_int errorCode;
 
-    shared_ptr<OpenCLDeviceContext> OpenCLDeviceContext = dynamic_pointer_cast<OpenCLDeviceContext>(context)->getContext();
+    auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
 
-    openClAddress = make_unique<cl::Buffer>(
-        OpenCLDeviceContext->getContext(),
+    openClBuffer.reset(new cl::Buffer(
+        openClContext->getContext(),
         CL_MEM_READ_ONLY,
         elementCount * sizeof(float),
         &errorCode
-    );
+    ));
 
-    if (errorCode != CL_SUCCESS) {
-        ostringstream stringStream;
-        stringStream << "Creating cl::Buffer failed with error " << errorCode;
-        throw runtime_error(stringStream.str());
-    }
+    OPENCL_ASSERT_CODE(errorCode);
 
     reset();
 }
@@ -48,75 +45,50 @@ void OpenCLDataContainer::copyFrom(const vector<float>& sourceArray) {
 }
 
 void OpenCLDataContainer::copyFromWithOffset(const vector<float>& sourceArray, unsigned int offset) {
-    cl_int errorCode;
+    auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
 
-    shared_ptr<OpenCLDeviceContext> OpenCLDeviceContext = dynamic_pointer_cast<OpenCLDeviceContext>(context)->getContext();
+    cl::CommandQueue& commandQueue = openClContext->getCommandQueue();
 
-    cl::CommandQueue* commandQueue = OpenCLDeviceContext->getCommandQueue();
-
-    errorCode = commandQueue->enqueueWriteBuffer(
-        OpenCLDeviceContext->getContext(),
+    OPENCL_ASSERT(commandQueue.enqueueWriteBuffer(
+        getBuffer(),
         CL_TRUE,
         offset * sizeof(float),
         sourceArray.size() * sizeof(float),
         sourceArray.data()
-    );
-
-    if (errorCode != CL_SUCCESS) {
-        ostringstream stringStream;
-        stringStream << "Creating cl::CommandQueue::enqueueWriteBuffer failed with error " << errorCode;
-        throw runtime_error(stringStream.str());
-    }
+    ));
 }
 
 void OpenCLDataContainer::deallocate() {
-    LOGI("Deallocatiog data container");
-    cudaFree(cudaAddress);
+    openClBuffer.reset();
 }
 
 void OpenCLDataContainer::pasteTo(vector<float>& targetArray) {
-    cl_int errorCode;
+    auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
 
-    shared_ptr<OpenCLDeviceContext> OpenCLDeviceContext = dynamic_pointer_cast<OpenCLDeviceContext>(context)->getContext();
-
-    cl::CommandQueue* commandQueue = OpenCLDeviceContext->getCommandQueue();
+    cl::CommandQueue& commandQueue = openClContext->getCommandQueue();
 
     if (elementCount > targetArray.size()) {
         throw invalid_argument("Allocated memory in GPU is different from target array size.");
     }
 
-    errorCode = commandQueue->enqueueReadBuffer(
-        OpenCLDeviceContext->getContext(),
+    OPENCL_ASSERT(commandQueue.enqueueReadBuffer(
+        getBuffer(),
         CL_TRUE,
         0,
         targetArray.size() * sizeof(float),
         targetArray.data()
-    );
-
-    if (errorCode != CL_SUCCESS) {
-        ostringstream stringStream;
-        stringStream << "Creating cl::CommandQueue::enqueueReadBuffer failed with error " << errorCode;
-        throw runtime_error(stringStream.str());
-    }
+    ));
 }
 
 void OpenCLDataContainer::reset() {
-    cl_int errorCode;
+    auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
 
-    shared_ptr<OpenCLDeviceContext> OpenCLDeviceContext = dynamic_pointer_cast<OpenCLDeviceContext>(context)->getContext();
+    cl::CommandQueue& commandQueue = openClContext->getCommandQueue();
 
-    cl::CommandQueue* commandQueue = OpenCLDeviceContext->getCommandQueue();
-
-    errorCode = commandQueue->enqueueFillBuffer<float>(
-        OpenCLDeviceContext->getContext(),
+    OPENCL_ASSERT(commandQueue.enqueueFillBuffer<float>(
+        getBuffer(),
         0,
         0,
-        size * sizeof(float)
-    );
-
-    if (errorCode != CL_SUCCESS) {
-        ostringstream stringStream;
-        stringStream << "Creating cl::CommandQueue::enqueueFillBuffer failed with error " << errorCode;
-        throw runtime_error(stringStream.str());
-    }
+        elementCount * sizeof(float)
+    ));
 }
