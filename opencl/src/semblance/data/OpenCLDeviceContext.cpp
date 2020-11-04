@@ -36,11 +36,17 @@ OpenCLDeviceContext::OpenCLDeviceContext(unsigned int deviceId) : DeviceContext(
     }
 
     if (foundDevice) {
-        context = make_unique<cl::Context>(*device);
-        commandQueue = make_unique<cl::CommandQueue>(*context, *device);
-    }
+        cl_int errorCode;
 
-    throw runtime_error("Couldn't find device.");
+        context = make_unique<cl::Context>(*device, nullptr, nullptr, nullptr, &errorCode);
+        OPENCL_ASSERT_CODE(errorCode);
+
+        commandQueue = make_unique<cl::CommandQueue>(*context, *device, CL_QUEUE_PROFILING_ENABLE, &errorCode);
+        OPENCL_ASSERT_CODE(errorCode);
+    }
+    else {
+        throw runtime_error("Couldn't find device.");
+    }
 }
 
 cl::Context& OpenCLDeviceContext::getContext() {

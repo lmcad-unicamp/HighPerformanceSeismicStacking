@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 using namespace std;
 
@@ -18,6 +19,8 @@ class OpenCLLinearSearchAlgorithm : public LinearSearchAlgorithm {
             shared_ptr<DeviceContext> context,
             DataContainerBuilder* dataBuilder
         );
+
+        vector<string> readSourceFiles(const vector<string>& files) const;
 
         void compileKernels(const string& deviceKernelSourcePath) override;
         void computeSemblanceAtGpuForMidpoint(float m0) override;

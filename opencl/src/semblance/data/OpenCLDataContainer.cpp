@@ -22,12 +22,17 @@ cl::Buffer& OpenCLDataContainer::getBuffer() const {
 void OpenCLDataContainer::allocate() {
     cl_int errorCode;
 
+    if (!elementCount) {
+        return;
+    }
+
     auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
 
     openClBuffer.reset(new cl::Buffer(
         openClContext->getContext(),
-        CL_MEM_READ_ONLY,
+        CL_MEM_READ_WRITE,
         elementCount * sizeof(float),
+        nullptr,
         &errorCode
     ));
 
@@ -37,7 +42,7 @@ void OpenCLDataContainer::allocate() {
 }
 
 void OpenCLDataContainer::copyFrom(const vector<float>& sourceArray) {
-    if (elementCount < sourceArray.size()) {
+    if (elementCount != sourceArray.size()) {
         throw invalid_argument("Allocated memory in GPU is different from source array size.");
     }
 
@@ -45,6 +50,10 @@ void OpenCLDataContainer::copyFrom(const vector<float>& sourceArray) {
 }
 
 void OpenCLDataContainer::copyFromWithOffset(const vector<float>& sourceArray, unsigned int offset) {
+    if (sourceArray.empty()) {
+        return;
+    }
+
     auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
 
     cl::CommandQueue& commandQueue = openClContext->getCommandQueue();
@@ -67,7 +76,7 @@ void OpenCLDataContainer::pasteTo(vector<float>& targetArray) {
 
     cl::CommandQueue& commandQueue = openClContext->getCommandQueue();
 
-    if (elementCount > targetArray.size()) {
+    if (elementCount != targetArray.size()) {
         throw invalid_argument("Allocated memory in GPU is different from target array size.");
     }
 
@@ -85,7 +94,7 @@ void OpenCLDataContainer::reset() {
 
     cl::CommandQueue& commandQueue = openClContext->getCommandQueue();
 
-    OPENCL_ASSERT(commandQueue.enqueueFillBuffer<float>(
+    OPENCL_ASSERT(commandQueue.enqueueFillBuffer(
         getBuffer(),
         0,
         0,
