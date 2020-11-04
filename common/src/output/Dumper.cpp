@@ -1,9 +1,9 @@
 #include "common/include/output/Dumper.hpp"
 #include "common/include/output/Logger.hpp"
 
-#include <boost/filesystem.hpp>
 #include <ctime>
 #include <iomanip>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -29,7 +29,11 @@ Dumper::Dumper(const string& path, const string& dataFile, const string& compute
 void Dumper::createDir() const {
     LOGI("Creating output directory at " << outputDirectoryPath);
 
-    if (!boost::filesystem::create_directory(outputDirectoryPath)) {
+    if (filesystem::exists(outputDirectoryPath)) {
+        return;
+    }
+
+    if (!filesystem::create_directory(outputDirectoryPath)) {
         throw runtime_error("Directory couldn't be created");
     }
 }
