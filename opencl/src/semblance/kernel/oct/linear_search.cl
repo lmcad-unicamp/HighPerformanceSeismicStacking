@@ -93,25 +93,25 @@ void computeSemblancesForOffsetContinuationTrajectory(
                 float tIndex = t / dtInSeconds;
                 int kIndex = (int) tIndex;
                 float dt = tIndex - (float) kIndex;
-            
+
                 if ((kIndex - tauIndexDisplacement >= 0) &&
                     (kIndex + tauIndexDisplacement + 1 < (int) samplesPerTrace)) {
-                    
+
                     int k = kIndex - tauIndexDisplacement;
                     float u, y0, y1;
-                    
+
                     y1 = traceSamples[k];
-                    
+
                     for (int j = 0; j < windowSize; j++, k++) {
                         y0 = y1;
                         y1 = traceSamples[k + 1];
                         u = (y1 - y0) * dt + y0;
-            
+
                         numeratorComponents[j] += u;
                         linearSum += u;
                         denominatorSum += u * u;
                     }
-            
+
                     usedCount++;
                 }
             }

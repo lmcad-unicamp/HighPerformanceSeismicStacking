@@ -64,15 +64,15 @@ void mutatePopulations(
             p2 = random_next(&st[seedIndex]);
             p3 = random_next(&st[seedIndex]);
 
-            r1 = popIndex + 
+            r1 = popIndex +
                 (unsigned int) (p2 * (float)(individualsPerPopulation - 1)) * numberOfParameters +
                 parameterIndex;
 
-            r2 = popIndex + 
+            r2 = popIndex +
                 (unsigned int) (p2 * (float)(individualsPerPopulation - 1)) * numberOfParameters +
                 parameterIndex;
 
-            r3 = popIndex + 
+            r3 = popIndex +
                 (unsigned int) (p2 * (float)(individualsPerPopulation - 1)) * numberOfParameters +
                 parameterIndex;
 

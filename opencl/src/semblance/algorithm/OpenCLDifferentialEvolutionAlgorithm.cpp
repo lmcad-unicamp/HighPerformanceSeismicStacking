@@ -56,7 +56,7 @@ void OpenCLDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(floa
             OPENCL_ASSERT(computeSemblancesForCommonMidPoint.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceParameterArray)));
             OPENCL_ASSERT(computeSemblancesForCommonMidPoint.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceResultArray)));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForCommonMidPoint, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForCommonMidPoint, offset, global, local));
 
             break;
         }
@@ -103,7 +103,7 @@ void OpenCLDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(floa
             OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceParameterArray)));
             OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceResultArray)));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForOffsetContinuationTrajectory, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForOffsetContinuationTrajectory, offset, global, local));
 
             break;
         }
@@ -229,7 +229,7 @@ void OpenCLDifferentialEvolutionAlgorithm::setupRandomSeedArray() {
 
     unsigned int samplesPerTrace = gather->getSamplesPerTrace();
     unsigned int seedCount = samplesPerTrace * individualsPerPopulation;
-    
+
     st.reset(new cl::Buffer(
         openClContext->getContext(),
         CL_MEM_READ_WRITE,
@@ -281,7 +281,7 @@ void OpenCLDifferentialEvolutionAlgorithm::startAllPopulations() {
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &samplesPerTrace));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &numberOfParameters));
 
-    OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(startPopulations, offset, global, local)); 
+    OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(startPopulations, offset, global, local));
 
     OPENCL_ASSERT(commandQueue.finish());
 
@@ -290,7 +290,7 @@ void OpenCLDifferentialEvolutionAlgorithm::startAllPopulations() {
 }
 
 void OpenCLDifferentialEvolutionAlgorithm::mutateAllPopulations() {
-    
+
     Gather* gather = Gather::getInstance();
 
     auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
@@ -315,7 +315,7 @@ void OpenCLDifferentialEvolutionAlgorithm::mutateAllPopulations() {
     OPENCL_ASSERT(mutatePopulations.setArg(argIndex++, sizeof(unsigned int), &samplesPerTrace));
     OPENCL_ASSERT(mutatePopulations.setArg(argIndex++, sizeof(unsigned int), &numberOfParameters));
 
-    OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(mutatePopulations, offset, global, local)); 
+    OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(mutatePopulations, offset, global, local));
 
     OPENCL_ASSERT(commandQueue.finish());
 }

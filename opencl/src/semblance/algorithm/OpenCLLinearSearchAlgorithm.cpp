@@ -69,7 +69,7 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
             OPENCL_ASSERT(computeSemblancesForCommonMidPoint.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL])));
             OPENCL_ASSERT(computeSemblancesForCommonMidPoint.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForCommonMidPoint, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForCommonMidPoint, offset, global, local));
 
             argIndex = 0;
             cl::Kernel& selectBestSemblancesForCommonMidPoint = kernels["selectBestSemblancesForCommonMidPoint"];
@@ -83,7 +83,7 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
             cl::NDRange globalSelection(fitGlobal(samplesPerTrace, threadCount));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectBestSemblancesForCommonMidPoint, offset, globalSelection, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectBestSemblancesForCommonMidPoint, offset, globalSelection, local));
 
             break;
         }
@@ -105,7 +105,7 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
             OPENCL_ASSERT(computeSemblancesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL])));
             OPENCL_ASSERT(computeSemblancesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForZeroOffsetCommonReflectionSurface, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForZeroOffsetCommonReflectionSurface, offset, global, local));
 
             argIndex = 0;
             cl::Kernel& selectBestSemblancesForZeroOffsetCommonReflectionSurface = kernels["selectBestSemblancesForZeroOffsetCommonReflectionSurface"];
@@ -119,7 +119,7 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
             cl::NDRange globalSelection(fitGlobal(samplesPerTrace, threadCount));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectBestSemblancesForZeroOffsetCommonReflectionSurface, offset, globalSelection, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectBestSemblancesForZeroOffsetCommonReflectionSurface, offset, globalSelection, local));
 
             break;
         }
@@ -144,7 +144,7 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
             OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL])));
             OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForOffsetContinuationTrajectory, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForOffsetContinuationTrajectory, offset, global, local));
 
             argIndex = 0;
             cl::Kernel& selectBestSemblancesForOffsetContinuationTrajectory = kernels["selectBestSemblancesForOffsetContinuationTrajectory"];
@@ -158,7 +158,7 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
             cl::NDRange globalSelection(fitGlobal(samplesPerTrace, threadCount));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectBestSemblancesForOffsetContinuationTrajectory, offset, globalSelection, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectBestSemblancesForOffsetContinuationTrajectory, offset, globalSelection, local));
 
             break;
         }
@@ -193,7 +193,7 @@ void OpenCLLinearSearchAlgorithm::initializeParameters() {
             OPENCL_ASSERT(buildParameterArrayForCommonMidPoint.setArg(argIndex++, sizeof(float), &increment));
             OPENCL_ASSERT(buildParameterArrayForCommonMidPoint.setArg(argIndex++, sizeof(unsigned int), &totalNumberOfParameters));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(buildParameterArrayForCommonMidPoint, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(buildParameterArrayForCommonMidPoint, offset, global, local));
 
             break;
         }
@@ -225,7 +225,7 @@ void OpenCLLinearSearchAlgorithm::initializeParameters() {
             OPENCL_ASSERT(buildParameterArrayForZeroOffsetCommonReflectionSurface.setArg(argIndex++, sizeof(unsigned int), &countB));
             OPENCL_ASSERT(buildParameterArrayForZeroOffsetCommonReflectionSurface.setArg(argIndex++, sizeof(unsigned int), &totalNumberOfParameters));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(buildParameterArrayForZeroOffsetCommonReflectionSurface, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(buildParameterArrayForZeroOffsetCommonReflectionSurface, offset, global, local));
 
             break;
         }
@@ -250,7 +250,7 @@ void OpenCLLinearSearchAlgorithm::initializeParameters() {
             OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &countSlope));
             OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &totalNumberOfParameters));
 
-            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(buildParameterArrayForOffsetContinuationTrajectory, offset, global, local)); 
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(buildParameterArrayForOffsetContinuationTrajectory, offset, global, local));
 
             break;
         }
@@ -332,14 +332,14 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
             float h0 = traveltime->getReferenceHalfoffset();
 
             default_random_engine generator;
-    
+
             for (unsigned int prmtr = 0; prmtr < 2; prmtr++) {
-    
+
                 float min = traveltime->getLowerBoundForParameter(prmtr);
                 float max = traveltime->getUpperBoundForParameter(prmtr);
-    
+
                 uniform_real_distribution<float> uniformDist(min, max);
-    
+
                 for (unsigned int idx = 0; idx < samplePop; idx++) {
                     float randomParameter = uniformDist(generator);
                     if (prmtr == OffsetContinuationTrajectory::VELOCITY) {
@@ -348,7 +348,7 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
                     parameterSampleArray[idx * 2 + prmtr] = randomParameter;
                 }
             }
-    
+
             unique_ptr<DataContainer> selectionParameterArray(dataFactory->build(2 * samplePop, deviceContext));
 
             selectionParameterArray->copyFrom(parameterSampleArray);

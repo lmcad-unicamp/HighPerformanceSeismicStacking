@@ -7,8 +7,8 @@
 using namespace std;
 
 void OpenCLComputeAlgorithm::compileKernels(
-    const string& deviceKernelSourcePath, 
-    const string& computeAlgorithm, 
+    const string& deviceKernelSourcePath,
+    const string& computeAlgorithm,
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context
 ) {
