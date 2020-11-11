@@ -2,15 +2,15 @@
 #include "common/include/output/Logger.hpp"
 #include "common/include/traveltime/CommonMidPoint.hpp"
 #include "common/include/traveltime/CommonReflectionSurface.hpp"
+#include "common/include/traveltime/OffsetContinuationTrajectory.hpp"
 #include "opencl/include/execution/OpenCLUtils.hpp"
 #include "opencl/include/semblance/algorithm/OpenCLLinearSearchAlgorithm.hpp"
 #include "opencl/include/semblance/data/OpenCLDataContainer.hpp"
 #include "opencl/include/semblance/data/OpenCLDeviceContext.hpp"
 
 #include <cmath>
-#include <filesystem>
-#include <fstream>
 #include <memory>
+#include <random>
 
 using namespace std;
 
@@ -18,63 +18,11 @@ OpenCLLinearSearchAlgorithm::OpenCLLinearSearchAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
     DataContainerBuilder* dataBuilder
-) : LinearSearchAlgorithm(traveltime, context, dataBuilder) {
-}
-
-vector<string> OpenCLLinearSearchAlgorithm::readSourceFiles(const vector<string>& files) const {
-    vector<string> result;
-    for (auto file : files) {
-        ifstream kernelFile(file);
-        stringstream kernelSourceCode;
-        kernelSourceCode << kernelFile.rdbuf();
-        result.push_back(kernelSourceCode.str());
-    }
-    return result;
+) : LinearSearchAlgorithm(traveltime, context, dataBuilder), OpenCLComputeAlgorithm() {
 }
 
 void OpenCLLinearSearchAlgorithm::compileKernels(const string& deviceKernelSourcePath) {
-    cl_int errorCode;
-
-    vector<string> kernelSources;
-    vector<cl::Kernel> openClKernels;
-
-    auto openClContext = OPENCL_CONTEXT_PTR(deviceContext);
-
-    const string traveltimeKernelPath = deviceKernelSourcePath + "/" + traveltime->getTraveltimeWord();
-
-    filesystem::path specificKernelPath(traveltimeKernelPath + "/linear_search.cl");
-    filesystem::path commonKernelPath(traveltimeKernelPath + "/common.cl");
-
-    if (!filesystem::exists(specificKernelPath)) {
-        throw runtime_error("Kernels for greedy algorithm do not exist.");
-    }
-
-    kernelSources.push_back(static_cast<string>(specificKernelPath));
-
-    if (filesystem::exists(commonKernelPath)) {
-        kernelSources.push_back(static_cast<string>(commonKernelPath));
-    }
-
-    cl::Program program(openClContext->getContext(), readSourceFiles(kernelSources), &errorCode);
-
-    OPENCL_ASSERT_CODE(errorCode);
-
-    errorCode = program.build({ openClContext->getDevice() }, "-cl-fast-relaxed-math -I../");
-
-    if (errorCode != CL_SUCCESS) {
-        auto errors = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(openClContext->getDevice(), &errorCode);
-        ostringstream stringStream;
-        stringStream << "Building cl::Program failed with " << errors;
-        throw runtime_error(stringStream.str());
-    }
-
-    OPENCL_ASSERT(program.createKernels(&openClKernels));
-
-    for(auto kernel : openClKernels) {
-        string kernelName = kernel.getInfo<CL_KERNEL_FUNCTION_NAME>(&errorCode);
-        OPENCL_ASSERT_CODE(errorCode);
-        kernels[kernelName] = kernel;
-    }
+    OpenCLComputeAlgorithm::compileKernels(deviceKernelSourcePath, "linear_search", traveltime, deviceContext);
 }
 
 void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
@@ -87,7 +35,6 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
     }
 
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
-    unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();
 
     Gather* gather = Gather::getInstance();
 
@@ -98,6 +45,8 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
     float dtInSeconds = gather->getSamplePeriodInSeconds();
     int tauIndexDisplacement = gather->getTauIndexDisplacement();
     unsigned int windowSize = gather->getWindowSize();
+    float apm = gather->getApm();
+    float h0 = traveltime->getReferenceHalfoffset();
 
     cl::NDRange offset;
     cl::NDRange global(fitGlobal(totalNumberOfParameters * samplesPerTrace, threadCount));
@@ -174,7 +123,45 @@ void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
             break;
         }
-        case OCT:
+        case OCT: {
+            cl_uint argIndex = 0;
+            cl::Kernel& computeSemblancesForOffsetContinuationTrajectory = kernels["computeSemblancesForOffsetContinuationTrajectory"];
+
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL])));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT])));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST])));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &filteredTracesCount));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &samplesPerTrace));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &apm));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &m0));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &h0));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &dtInSeconds));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(int), &tauIndexDisplacement));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(int), &windowSize));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceParameterArray)));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &totalNumberOfParameters));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceNotUsedCountArray)));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL])));
+            OPENCL_ASSERT(computeSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])));
+
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(computeSemblancesForOffsetContinuationTrajectory, offset, global, local)); 
+
+            argIndex = 0;
+            cl::Kernel& selectBestSemblancesForOffsetContinuationTrajectory = kernels["selectBestSemblancesForOffsetContinuationTrajectory"];
+
+            OPENCL_ASSERT(selectBestSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL])));
+            OPENCL_ASSERT(selectBestSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])));
+            OPENCL_ASSERT(selectBestSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceParameterArray)));
+            OPENCL_ASSERT(selectBestSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &totalNumberOfParameters));
+            OPENCL_ASSERT(selectBestSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &samplesPerTrace));
+            OPENCL_ASSERT(selectBestSemblancesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceResultArray)));
+
+            cl::NDRange globalSelection(fitGlobal(samplesPerTrace, threadCount));
+
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectBestSemblancesForOffsetContinuationTrajectory, offset, globalSelection, local)); 
+
+            break;
+        }
         default:
             throw invalid_argument("Invalid traveltime model");
     }
@@ -242,7 +229,31 @@ void OpenCLLinearSearchAlgorithm::initializeParameters() {
 
             break;
         }
-        case OCT:
+        case OCT: {
+            float minVelocity = traveltime->getLowerBoundForParameter(OffsetContinuationTrajectory::VELOCITY);
+            float incrementVelocity = discretizationStep[OffsetContinuationTrajectory::VELOCITY];
+            unsigned int countVelocity = discretizationGranularity[OffsetContinuationTrajectory::VELOCITY];
+
+            float minSlope = traveltime->getLowerBoundForParameter(OffsetContinuationTrajectory::SLOPE);
+            float incrementSlope = discretizationStep[OffsetContinuationTrajectory::SLOPE];
+            unsigned int countSlope = discretizationGranularity[OffsetContinuationTrajectory::SLOPE];
+
+            cl_uint argIndex = 0;
+            cl::Kernel& buildParameterArrayForOffsetContinuationTrajectory = kernels["buildParameterArrayForOffsetContinuationTrajectory"];
+
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceParameterArray)));
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &minVelocity));
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &incrementVelocity));
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &countVelocity));
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &minSlope));
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &incrementSlope));
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &countSlope));
+            OPENCL_ASSERT(buildParameterArrayForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &totalNumberOfParameters));
+
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(buildParameterArrayForOffsetContinuationTrajectory, offset, global, local)); 
+
+            break;
+        }
         default:
            throw invalid_argument("Invalid traveltime model");
     }
@@ -256,12 +267,9 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
     Gather* gather = Gather::getInstance();
 
     unsigned int traceCount = gather->getTotalTracesCount();
-    unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
 
     unsigned int samplesPerTrace = gather->getSamplesPerTrace();
     float dtInSeconds = gather->getSamplePeriodInSeconds();
-    int tauIndexDisplacement = gather->getTauIndexDisplacement();
-    unsigned int windowSize = gather->getWindowSize();
     float apm = gather->getApm();
 
     vector<unsigned char> usedTraceMask(traceCount);
@@ -280,7 +288,7 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
     OPENCL_ASSERT_CODE(errorCode);
 
     OPENCL_ASSERT(commandQueue.enqueueFillBuffer(
-        *deviceUsedTraceMaskArray.get(),
+        *deviceUsedTraceMaskArray,
         0,
         0,
         traceCount * sizeof(unsigned char)
@@ -318,7 +326,51 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
             OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectTracesForZeroOffsetCommonReflectionSurface, offset, global, local));
             break;
         }
-        case OCT: 
+        case OCT: {
+            unsigned int samplePop = 1024;
+            vector<float> parameterSampleArray(samplePop * 2);
+            float h0 = traveltime->getReferenceHalfoffset();
+
+            default_random_engine generator;
+    
+            for (unsigned int prmtr = 0; prmtr < 2; prmtr++) {
+    
+                float min = traveltime->getLowerBoundForParameter(prmtr);
+                float max = traveltime->getUpperBoundForParameter(prmtr);
+    
+                uniform_real_distribution<float> uniformDist(min, max);
+    
+                for (unsigned int idx = 0; idx < samplePop; idx++) {
+                    float randomParameter = uniformDist(generator);
+                    if (prmtr == OffsetContinuationTrajectory::VELOCITY) {
+                        randomParameter = 4.0f / (randomParameter * randomParameter);
+                    }
+                    parameterSampleArray[idx * 2 + prmtr] = randomParameter;
+                }
+            }
+    
+            unique_ptr<DataContainer> selectionParameterArray(dataFactory->build(2 * samplePop, deviceContext));
+
+            selectionParameterArray->copyFrom(parameterSampleArray);
+
+            cl_uint argIndex = 0;
+            cl::Kernel& selectTracesForOffsetContinuationTrajectory = kernels["selectTracesForOffsetContinuationTrajectory"];
+
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceFilteredTracesDataMap[GatherData::MDPNT])));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceFilteredTracesDataMap[GatherData::HLFOFFST])));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, OPENCL_DEV_BUFFER(selectionParameterArray)));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &samplePop));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &traceCount));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &samplesPerTrace));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(unsigned int), &dtInSeconds));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &apm));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &m0));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, sizeof(float), &h0));
+            OPENCL_ASSERT(selectTracesForOffsetContinuationTrajectory.setArg(argIndex++, *deviceUsedTraceMaskArray));
+
+            OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectTracesForOffsetContinuationTrajectory, offset, global, local));
+            break;
+        }
         default:
             throw invalid_argument("Invalid traveltime model");
     }

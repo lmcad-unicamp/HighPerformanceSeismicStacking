@@ -1,48 +1,32 @@
 #include "common/include/gpu/interface.h"
 
 __kernel
-void buildParameterArrayForCommonMidPoint(
-    __global __write_only float* parameterArray,
-    float minVelocity,
-    float increment,
-    unsigned int totalParameterCount
-) {
-    unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
-
-    if (threadIndex < totalParameterCount) {
-        float v = minVelocity + ((float) threadIndex) * increment;
-        parameterArray[threadIndex] = 4.0f / (v * v);
-    }
-}
-
-__kernel
 void computeSemblancesForCommonMidPoint(
     __global __read_only float *samples,
     __global __read_only float *halfoffsetSquared,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
+    unsigned int individualsPerPopulation,
     float dtInSeconds,
     int tauIndexDisplacement,
     int windowSize,
-    /* Parameter arrays */
-    __global __read_only float *parameterArray,
-    unsigned int totalParameterCount,
-    /* Output arrays */
-    __global __write_only float *semblanceArray,
-    __global __write_only float *stackArray
+    unsigned int numberOfCommonResults,
+    __global __read_only float *x,
+    __global __write_only float *fx
 ) {
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
-
-    unsigned int sampleIndex = threadIndex / totalParameterCount;
-    unsigned int parameterIndex = threadIndex % totalParameterCount;
+    unsigned int sampleIndex = threadIndex / individualsPerPopulation;
+    unsigned int individualIndex = threadIndex % individualsPerPopulation;
 
     if (sampleIndex < samplesPerTrace) {
         float semblance = 0;
         float stack = 0;
 
-        float t0 = ((float) sampleIndex) * dtInSeconds;
+        unsigned int parameterIndex = sampleIndex * individualsPerPopulation + individualIndex;
 
-        float c = parameterArray[parameterIndex];
+        float t0 = ((float) sampleIndex) * dtInSeconds;
+        float v = x[parameterIndex];
+        float c = 4.0f / (v * v);
 
         float numeratorComponents[MAX_WINDOW_SIZE];
         float denominatorSum = 0;
@@ -96,37 +80,40 @@ void computeSemblancesForCommonMidPoint(
             stack = linearSum / (usedCount * windowSize);
         }
 
-        unsigned int offset = sampleIndex * totalParameterCount + parameterIndex;
-        semblanceArray[offset] = semblance;
-        stackArray[offset] = stack;
+        unsigned int offset = (sampleIndex * individualsPerPopulation + individualIndex) * numberOfCommonResults;
+        fx[offset] = semblance;
+        fx[offset + 1] = stack;
     }
 }
 
 __kernel
-void selectBestSemblancesForCommonMidPoint(
-    __global __read_only float *semblanceArray,
-    __global __read_only float *stackArray,
-    __global __read_only float *parameterArray,
-    unsigned int totalParameterCount,
+void selectBestIndividualsForCommonMidPoint(
+    __global __read_only float* x,
+    __global __read_only float* fx,
+    __global __write_only float* resultArray,
+    unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
-    __global __write_only float *resultArray
+    unsigned int numberOfCommonResults
 ) {
     unsigned int sampleIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 
     if (sampleIndex < samplesPerTrace) {
-        unsigned int offset = sampleIndex * totalParameterCount;
+        unsigned int popIndex = sampleIndex * individualsPerPopulation;
+        unsigned int fitnessIndex = sampleIndex * individualsPerPopulation * numberOfCommonResults;
 
         float bestSemblance = -1, bestStack, bestVelocity;
 
-        for (unsigned int parameterIndex = 0; parameterIndex < totalParameterCount; parameterIndex++) {
-            float semblance = semblanceArray[offset + parameterIndex];
-            float stack = stackArray[offset + parameterIndex];
-            float c = parameterArray[parameterIndex];
-    
+        for (unsigned int individualIndex = 0; individualIndex < individualsPerPopulation; individualIndex++) {
+            unsigned int featureOffset = fitnessIndex + individualIndex * numberOfCommonResults;
+            
+            float semblance = fx[featureOffset];
+            float stack = fx[featureOffset + 1];
+            float velocity = x[popIndex + individualIndex];
+
             if (semblance > bestSemblance) {
                 bestSemblance = semblance;
                 bestStack = stack;
-                bestVelocity = 2.0f / sqrt(c);
+                bestVelocity = velocity;
             }
         }
 

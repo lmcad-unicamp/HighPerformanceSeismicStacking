@@ -1,6 +1,8 @@
 #pragma once
 
 #include "common/include/semblance/algorithm/DifferentialEvolutionAlgorithm.hpp"
+#include "opencl/include/execution/OpenCLUtils.hpp"
+#include "opencl/include/semblance/algorithm/OpenCLComputeAlgorithm.hpp"
 
 #include <memory>
 #include <string>
@@ -8,8 +10,9 @@
 
 using namespace std;
 
-class OpenCLDifferentialEvolutionAlgorithm : public DifferentialEvolutionAlgorithm {
+class OpenCLDifferentialEvolutionAlgorithm : public DifferentialEvolutionAlgorithm, public OpenCLComputeAlgorithm {
     protected:
+        unique_ptr<cl::Buffer> st;
 
     public:
         OpenCLDifferentialEvolutionAlgorithm(
