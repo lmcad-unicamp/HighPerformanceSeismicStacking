@@ -46,10 +46,9 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     deviceResultArray->pasteTo(computedResults);
 
-    unsigned long totalUsedTracesCount;
-    totalUsedTracesCount = static_cast<unsigned long>(filteredTracesCount) *
-            static_cast<unsigned long>(numberOfSamplesPerTrace) *
-            static_cast<unsigned long>(totalNumberOfParameters);
+    float totalUsedTracesCount = static_cast<float>(filteredTracesCount) *
+            static_cast<float>(numberOfSamplesPerTrace) *
+            static_cast<float>(totalNumberOfParameters);
 
     saveStatisticalResults(totalUsedTracesCount, totalExecutionTime, selectionExecutionTime);
 }

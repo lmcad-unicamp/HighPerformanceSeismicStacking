@@ -69,11 +69,10 @@ void DifferentialEvolutionAlgorithm::computeSemblanceAndParametersForMidpoint(fl
 
     selectBestIndividuals(computedResults);
 
-    unsigned long totalUsedTracesCount;
-    totalUsedTracesCount = static_cast<unsigned long>(filteredTracesCount) *
-            static_cast<unsigned long>(numberOfSamplesPerTrace) *
-            static_cast<unsigned long>(generations) *
-            static_cast<unsigned long>(individualsPerPopulation);
+    float totalUsedTracesCount = static_cast<float>(filteredTracesCount) *
+            static_cast<float>(numberOfSamplesPerTrace) *
+            static_cast<float>(generations) *
+            static_cast<float>(individualsPerPopulation);
 
     saveStatisticalResults(totalUsedTracesCount, totalExecutionTime, selectionExecutionTime);
 }
@@ -122,7 +121,7 @@ void DifferentialEvolutionAlgorithm::setUp() {
 
     fx.reset(dataFactory->build(commonResultArraySize, deviceContext));
     fu.reset(dataFactory->build(commonResultArraySize, deviceContext));
-   
+
     deviceResultArray.reset(dataFactory->build(numberOfResults * numberOfSamples, deviceContext));
 
     computedResults.resize(numberOfResults * numberOfSamples);

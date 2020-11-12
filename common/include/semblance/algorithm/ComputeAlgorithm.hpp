@@ -79,7 +79,7 @@ class ComputeAlgorithm {
         float getStatisticalResult(StatisticResult statResult) const;
 
         void saveStatisticalResults(
-            unsigned long totalUsedTracesCount,
+            float totalUsedTracesCount,
             chrono::duration<double> totalExecutionTime,
             chrono::duration<double> selectionExecutionTime
         );

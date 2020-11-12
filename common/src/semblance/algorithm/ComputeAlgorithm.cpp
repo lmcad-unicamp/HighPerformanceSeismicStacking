@@ -69,7 +69,7 @@ float ComputeAlgorithm::getStatisticalResult(StatisticResult statResult) const {
 }
 
 void ComputeAlgorithm::saveStatisticalResults(
-    unsigned long totalUsedTracesCount,
+    float totalUsedTracesCount,
     chrono::duration<double> totalExecutionTime,
     chrono::duration<double> selectionExecutionTime
 ) {
@@ -79,23 +79,18 @@ void ComputeAlgorithm::saveStatisticalResults(
 
     deviceNotUsedCountArray->pasteTo(tempNotUsedCount);
 
-    unsigned long notUsedTracesCount, interpolationsPerformed;
+    float notUsedTracesCount, interpolationsPerformed;
 
-    notUsedTracesCount = static_cast<unsigned long>(
-        accumulate(tempNotUsedCount.begin(), tempNotUsedCount.end(), 0.0f)
-    );
+    notUsedTracesCount = accumulate(tempNotUsedCount.begin(), tempNotUsedCount.end(), 0.0f);
 
-    interpolationsPerformed = static_cast<unsigned long>(gather->getWindowSize()) *
-        (totalUsedTracesCount - notUsedTracesCount);
+    interpolationsPerformed = static_cast<float>(gather->getWindowSize()) * (totalUsedTracesCount - notUsedTracesCount);
 
-    computedStatisticalResults[StatisticResult::INTR_PER_SEC] =
-        static_cast<float>(interpolationsPerformed) / static_cast<float>(totalExecutionTime.count());
+    computedStatisticalResults[StatisticResult::INTR_PER_SEC] = interpolationsPerformed / static_cast<float>(totalExecutionTime.count());
 
     computedStatisticalResults[StatisticResult::EFFICIENCY] = 1.0f;
 
     if (totalUsedTracesCount > 0) {
-        computedStatisticalResults[StatisticResult::EFFICIENCY] -=
-            static_cast<float>(notUsedTracesCount) / static_cast<float>(totalUsedTracesCount);
+        computedStatisticalResults[StatisticResult::EFFICIENCY] -= notUsedTracesCount / totalUsedTracesCount;
     }
 
     computedStatisticalResults[StatisticResult::SELECTED_TRACES] = static_cast<float>(filteredTracesCount);
