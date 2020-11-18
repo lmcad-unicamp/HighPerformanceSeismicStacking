@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common/include/gpu/interface.h"
 #include "common/include/model/Cdp.hpp"
 
 #include <iostream>
@@ -56,8 +55,6 @@ class Gather {
         float getAzimuthInDegrees() const;
 
         float getAzimuthInRad() const;
-
-        gpu_gather_data_t getGpuGatherData() const;
 
         float getTau() const;
 

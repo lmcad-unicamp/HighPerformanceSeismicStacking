@@ -51,8 +51,6 @@ class Traveltime {
 
         float getUpperBoundForParameter(unsigned int p) const;
 
-        gpu_traveltime_data_t toGpuData() const;
-
         // Virtual methods.
 
         virtual const string getTraveltimeWord() const = 0;

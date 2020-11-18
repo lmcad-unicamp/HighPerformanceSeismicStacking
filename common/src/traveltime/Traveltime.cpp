@@ -60,11 +60,3 @@ const string Traveltime::getDescriptionForResult(unsigned int i) const {
 
     return travelTimeParameters[i - fixedResultCount].getParameterDescription();
 }
-
-gpu_traveltime_data_t Traveltime::toGpuData() const {
-    return {
-        .traveltime = getModel(),
-        .numberOfParameters = getNumberOfParameters(),
-        .numberOfCommonResults = getNumberOfCommonResults()
-    };
-}

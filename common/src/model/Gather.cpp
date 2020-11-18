@@ -162,20 +162,6 @@ const string Gather::toString() const {
     return stringStream.str();
 }
 
-gpu_gather_data_t Gather::getGpuGatherData() const {
-
-    LOGD(toString());
-
-    return {
-        .samplesPerTrace = samplesPerTrace,
-        .tauIndexDisplacement = tauIndexDisplacement,
-        .windowSize = windowSize,
-        .apm = apm,
-        .tau = tau,
-        .dtInSeconds = dtInSeconds
-    };
-}
-
 float Gather::getApm() const {
     return apm;
 }

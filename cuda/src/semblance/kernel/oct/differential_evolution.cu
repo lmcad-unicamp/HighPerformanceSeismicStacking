@@ -43,9 +43,7 @@ void computeSemblancesForOffsetContinuationTrajectory(
         float denominatorSum = 0;
         float linearSum = 0;
 
-        for (unsigned int i = 0; i < MAX_WINDOW_SIZE; i++) {
-            numeratorComponents[i] = 0;
-        }
+        RESET_SEMBLANCE_NUM_COMP(numeratorComponents, MAX_WINDOW_SIZE);
 
         unsigned int usedCount = 0, notUsedCount = 0;
 
@@ -64,42 +62,21 @@ void computeSemblancesForOffsetContinuationTrajectory(
             errorCode = computeTime(h, h0, t0, m0, m, mh, c, slope, &t);
 
             if (errorCode == NO_ERROR) {
-                float tIndex = t / dtInSeconds;
-                int kIndex = static_cast<int>(tIndex);
-                float dt = tIndex - static_cast<float>(kIndex);
-            
-                if ((kIndex - tauIndexDisplacement >= 0) &&
-                    (kIndex + tauIndexDisplacement + 1 < static_cast<int>(samplesPerTrace))) {
-                    
-                    int k = kIndex - tauIndexDisplacement;
-                    float u, y0, y1;
-                    
-                    y1 = traceSamples[k];
-                    
-                    for (int j = 0; j < windowSize; j++, k++) {
-                        y0 = y1;
-                        y1 = traceSamples[k + 1];
-                        u = (y1 - y0) * dt + y0;
-            
-                        numeratorComponents[j] += u;
-                        linearSum += u;
-                        denominatorSum += u * u;
-                    }
-            
-                    usedCount++;
-                }
+                COMPUTE_SEMBLANCE(
+                    t,
+                    dtInSeconds,
+                    samplesPerTrace,
+                    tauIndexDisplacement,
+                    windowSize,
+                    numeratorComponents,
+                    linearSum,
+                    denominatorSum,
+                    usedCount
+                );
             }
         }
 
-        if (usedCount > 0) {
-            float sumNumerator = 0;
-            for (int w = 0; w < windowSize; w++) {
-                sumNumerator += numeratorComponents[w] * numeratorComponents[w];
-            }
-
-            semblance = sumNumerator / (usedCount * denominatorSum);
-            stack = linearSum / (usedCount * windowSize);
-        }
+        REDUCE_SEMBLANCE_STACK(numeratorComponents, linearSum, denominatorSum, windowSize, usedCount, semblance, stack);
 
         notUsedCountArray[threadIndex] += notUsedCount;
 
