@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TEST_ID="e948eb2b"
+TEST_ID="6c3823e8"
 
 OPENCL_ROOT=$(dirname ${PWD})
 PROJECT_ROOT=$(dirname ${OPENCL_ROOT})

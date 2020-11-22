@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TEST_ID="0e72170f"
+TEST_ID="6c3823e8"
 
 CUDA_ROOT=$(dirname ${PWD})
 PROJECT_ROOT=$(dirname ${CUDA_ROOT})
