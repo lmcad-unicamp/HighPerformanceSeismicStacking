@@ -19,15 +19,15 @@ ifeq ($(ENABLE_PROFILING), yes)
 	NVCCFLAGS += -DPROFILE_ENABLED -lineinfo
 endif
 
-LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -lstdc++fs -lcuda
+LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -lcuda -lcurand -L/usr/lib/gcc/x86_64-linux-gnu/8/ -lstdc++fs
 CFLAGS += -Wall -fPIC -std=c++17 -Wno-sign-conversion
-NVCCFLAGS += --use_fast_math -Xcompiler -Wall -Xcompiler -fPIC -lcurand -arch $(ARCH)
+NVCCFLAGS += --use_fast_math -Xcompiler -Wall -Xcompiler -fPIC -arch $(ARCH)
 
 #
 # Folder paths
 #
 
-PROJECT_ROOT_PATH = ..
+PROJECT_ROOT_PATH = $(dir $(shell pwd))
 BINARY_PATH = $(PROJECT_ROOT_PATH)/cuda/bin/
 SINGLE_HOST_PATH = $(PROJECT_ROOT_PATH)/cuda/main/single_host
 SPITS_PATH = $(PROJECT_ROOT_PATH)/cuda/main/spitz
@@ -43,12 +43,13 @@ CUDA_LIBRARY_PATH = /usr/local/cuda/include/
 SPITS_LIBRARY_PATH = $(PROJECT_ROOT_PATH)/spits/API/include/
 
 NVCC = /usr/local/cuda/bin/nvcc
+GPP = g++-8
 
 %.o: %.cu
 	$(NVCC) -o $@ -c $< -dc -I$(PROJECT_ROOT_PATH) -I$(CUDA_LIBRARY_PATH) -I$(SPITS_LIBRARY_PATH) $(NVCCFLAGS)
 
 %.o: %.cpp
-	g++ -o $@ -c $< -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(CFLAGS)
+	$(GPP) -o $@ -c $< -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(CFLAGS)
 
 dependencies: $(CPP_OBJECT) $(CUDA_OBJECT)
 

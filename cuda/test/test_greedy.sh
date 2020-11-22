@@ -1,15 +1,15 @@
 #! /bin/bash
 
-TEST_ID="e948eb2b"
+TEST_ID="0e72170f"
 
 CUDA_ROOT=$(dirname ${PWD})
 PROJECT_ROOT=$(dirname ${CUDA_ROOT})
 
 FRAMEWORK="cuda"
 
-DATA_DIR="${PROJECT_ROOT}/data"
+DATA_DIR="/home/ubuntu/nfs/data"
 BIN_DIR="${CUDA_ROOT}/bin"
-TEST_DIR="${PROJECT_ROOT}/out/${TEST_ID}"
+TEST_DIR="/home/ubuntu/nfs/out"
 
 function greedy_common_mid_point {
     DATA_NAME=${1}

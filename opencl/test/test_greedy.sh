@@ -7,9 +7,9 @@ PROJECT_ROOT=$(dirname ${OPENCL_ROOT})
 
 FRAMEWORK="opencl"
 
-DATA_DIR="${PROJECT_ROOT}/data"
+DATA_DIR="/home/ubuntu/nfs/data"
 BIN_DIR="${OPENCL_ROOT}/bin"
-TEST_DIR="${PROJECT_ROOT}/out/${TEST_ID}"
+TEST_DIR="$/home/ubuntu/nfs/out/${TEST_ID}"
 
 KERNEL_PATH="${OPENCL_ROOT}/src/semblance/kernel"
 

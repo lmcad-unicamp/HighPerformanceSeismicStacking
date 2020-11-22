@@ -1,15 +1,15 @@
 #! /bin/bash
 
-TEST_ID="e948eb2b"
+TEST_ID="0e72170f"
 
 CUDA_ROOT=$(dirname ${PWD})
 PROJECT_ROOT=$(dirname ${CUDA_ROOT})
 
 FRAMEWORK="cuda"
 
-DATA_DIR="${PROJECT_ROOT}/data"
+DATA_DIR="/home/ubuntu/nfs/data"
 BIN_DIR="${CUDA_ROOT}/bin"
-TEST_DIR="${PROJECT_ROOT}/out/${TEST_ID}"
+TEST_DIR="/home/ubuntu/nfs/out"
 
 GENERATIONS="32"
 POPULATION_SIZE="32"
@@ -23,7 +23,7 @@ function de_common_mid_point {
     mkdir -p ${TEST_OUTPUT_DIR}
 
     (set -x; \
-    ${BIN_DIR}/single_host_linear_search \
+    ${BIN_DIR}/single_host_de \
         --aph 1000 --apm 150 --azimuth ${AZIMUTH} --tau 0.02 \
         --input ${DATA_DIR}/${DATA_NAME}.su \
         --output ${TEST_OUTPUT_DIR} \
@@ -42,7 +42,7 @@ function de_zero_offset_reflection_surface {
     mkdir -p ${TEST_OUTPUT_DIR}
 
     (set -x; \
-    ${BIN_DIR}/single_host_linear_search \
+    ${BIN_DIR}/single_host_de \
         --aph 1000 --apm 150 --azimuth ${AZIMUTH} --tau 0.02 \
         --input ${DATA_DIR}/${DATA_NAME}.su \
         --output ${TEST_OUTPUT_DIR} \
@@ -61,7 +61,7 @@ function de_offset_continuation_trajectory {
     mkdir -p ${TEST_OUTPUT_DIR}
 
     (set -x; \
-    ${BIN_DIR}/single_host_linear_search \
+    ${BIN_DIR}/single_host_de \
         --aph 1000 --apm 150 --azimuth ${AZIMUTH} --tau 0.02 \
         --input ${DATA_DIR}/${DATA_NAME}.su \
         --output ${TEST_OUTPUT_DIR} \

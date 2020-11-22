@@ -42,7 +42,7 @@ void OpenCLComputeAlgorithm::compileKernels(
 
     OPENCL_ASSERT_CODE(errorCode);
 
-    errorCode = program.build({ openClContext->getDevice() }, "-cl-fast-relaxed-math -I../");
+    errorCode = program.build({ openClContext->getDevice() }, "-cl-fast-relaxed-math -I" KERNEL_HEADER_PATH);
 
     if (errorCode != CL_SUCCESS) {
         auto errors = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(openClContext->getDevice(), &errorCode);

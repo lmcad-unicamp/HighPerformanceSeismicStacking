@@ -9,6 +9,10 @@
 #include <unordered_map>
 #include <vector>
 
+#ifndef KERNEL_HEADER_PATH
+#define KERNEL_HEADER_PATH "../"
+#endif
+
 using namespace std;
 
 class OpenCLComputeAlgorithm {
