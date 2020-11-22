@@ -38,12 +38,20 @@ single_host_linear_search: $(SINGLE_HOST_PATH)/linear_search.cpp $(CPP_OBJECT)
 	g++ -o $(BINARY_PATH)/$@ $^ -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(LDFLAGS)
 
 single_host_de: $(SINGLE_HOST_PATH)/differential_evolution.cpp $(CPP_OBJECT)
-	g++ -o $(BINARY_PATH)/$@ $^ -I$(PROJECT_ROOT_PATH) -I${SPITS_LIBRARY_PATH} $(LDFLAGS)
+	g++ -o $(BINARY_PATH)/$@ $^ -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(LDFLAGS)
 
 single_host_stretch_free: $(SINGLE_HOST_PATH)/stretch_free.cpp $(CPP_OBJECT)
-	g++ -o $(BINARY_PATH)/$@ $^ -I$(PROJECT_ROOT_PATH) -I${SPITS_LIBRARY_PATH} $(LDFLAGS)
+	g++ -o $(BINARY_PATH)/$@ $^ -shared $(CFLAGS) -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(LDFLAGS)
 
-all: single_host_linear_search
+spitz_linear_search: $(SPITS_PATH)/linear_search.cpp $(CPP_OBJECT)
+	g++ -o $(BINARY_PATH)/$@ $^ -shared $(CFLAGS) -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(LDFLAGS)
+
+spitz_de: $(SPITS_PATH)/differential_evolution.cpp $(CPP_OBJECT)
+	g++ -o $(BINARY_PATH)/$@ $^ -shared $(CFLAGS) -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(LDFLAGS)
+
+all: single_host_linear_search single_host_de single_host_stretch_free spitz_linear_search spitz_de
+
+spits: spitz_linear_search spitz_de
 
 clean:
 	rm -rf $(CPP_OBJECT)
