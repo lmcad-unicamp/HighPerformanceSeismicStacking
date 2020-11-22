@@ -9,7 +9,7 @@ FRAMEWORK="cuda"
 
 DATA_DIR="/home/ubuntu/nfs/data"
 BIN_DIR="${CUDA_ROOT}/bin"
-TEST_DIR="/home/ubuntu/nfs/out"
+TEST_DIR="/home/ubuntu/nfs/out/${TEST_ID}"
 
 GENERATIONS="32"
 POPULATION_SIZE="32"
