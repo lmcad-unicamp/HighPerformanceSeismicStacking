@@ -307,7 +307,7 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
             OPENCL_ASSERT(selectTracesForCommonMidPoint.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceFilteredTracesDataMap[GatherData::MDPNT])));
             OPENCL_ASSERT(selectTracesForCommonMidPoint.setArg(argIndex++, sizeof(unsigned int), &traceCount));
-            OPENCL_ASSERT(selectTracesForCommonMidPoint.setArg(argIndex++, *deviceUsedTraceMaskArray.get()));
+            OPENCL_ASSERT(selectTracesForCommonMidPoint.setArg(argIndex++, *deviceUsedTraceMaskArray));
             OPENCL_ASSERT(selectTracesForCommonMidPoint.setArg(argIndex++, sizeof(float), &m0));
 
             OPENCL_ASSERT(commandQueue.enqueueNDRangeKernel(selectTracesForCommonMidPoint, offset, global, local));
@@ -319,7 +319,7 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
             OPENCL_ASSERT(selectTracesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, OPENCL_DEV_BUFFER(deviceFilteredTracesDataMap[GatherData::MDPNT])));
             OPENCL_ASSERT(selectTracesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, sizeof(unsigned int), &traceCount));
-            OPENCL_ASSERT(selectTracesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, *deviceUsedTraceMaskArray.get()));
+            OPENCL_ASSERT(selectTracesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, *deviceUsedTraceMaskArray));
             OPENCL_ASSERT(selectTracesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, sizeof(float), &m0));
             OPENCL_ASSERT(selectTracesForZeroOffsetCommonReflectionSurface.setArg(argIndex++, sizeof(float), &apm));
 

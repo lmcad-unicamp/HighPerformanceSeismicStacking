@@ -50,10 +50,6 @@ unsigned int StretchFreeAlgorithm::getTotalNumberOfParameters() const {
     return 2 * NMAX + 1;
 }
 
-unsigned int StretchFreeAlgorithm::getParameterArrayStep() const {
-    return min(getTotalNumberOfParameters(), threadCount);
-}
-
 void StretchFreeAlgorithm::setUp() {
     Gather* gather = Gather::getInstance();
 
@@ -87,7 +83,7 @@ const string StretchFreeAlgorithm::toString() const {
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
     ostringstream stringStream;
 
-    stringStream << "Total number of parameters = " << getParameterArrayStep() << endl;
+    stringStream << "Total number of parameters = " << getTotalNumberOfParameters() << endl;
     stringStream << "N in [ " << -NMAX << "," << NMAX << "]" << endl;
 
     stringStream << "Parameter files: " << endl;

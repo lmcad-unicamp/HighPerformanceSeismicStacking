@@ -103,10 +103,6 @@ void LinearSearchAlgorithm::setUp() {
     isSet = true;
 }
 
-unsigned int LinearSearchAlgorithm::getParameterArrayStep() const {
-    return min(getTotalNumberOfParameters(), threadCount);
-}
-
 void LinearSearchAlgorithm::setupArrays() {
     Gather* gather = Gather::getInstance();
 

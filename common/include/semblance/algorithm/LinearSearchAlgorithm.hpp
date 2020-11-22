@@ -27,15 +27,11 @@ class LinearSearchAlgorithm : public ComputeAlgorithm {
 
         void computeSemblanceAndParametersForMidpoint(float m0) override;
 
-        unsigned int getParameterArrayStep() const override;
-
         void setUp() override;
 
         const string toString() const override;
 
         float getParameterValueAt(unsigned int iterationNumber, unsigned int p) const;
-
-        unsigned int getThreadCount() const { return threadCount; };
 
         unsigned int getTotalNumberOfParameters() const;
 

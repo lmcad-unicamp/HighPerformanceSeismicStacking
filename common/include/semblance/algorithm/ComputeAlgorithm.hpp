@@ -91,7 +91,6 @@ class ComputeAlgorithm {
 
         virtual void computeSemblanceAndParametersForMidpoint(float m0) = 0;
         virtual void computeSemblanceAtGpuForMidpoint(float m0) = 0;
-        virtual unsigned int getParameterArrayStep() const = 0;
         virtual void selectTracesToBeUsedForMidpoint(float m0) = 0;
         virtual void setUp() = 0;
         virtual const string toString() const = 0;

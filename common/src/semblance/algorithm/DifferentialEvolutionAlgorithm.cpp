@@ -77,14 +77,6 @@ void DifferentialEvolutionAlgorithm::computeSemblanceAndParametersForMidpoint(fl
     saveStatisticalResults(totalUsedTracesCount, totalExecutionTime, selectionExecutionTime);
 }
 
-unsigned int DifferentialEvolutionAlgorithm::getParameterArrayStep() const {
-    return individualsPerPopulation * traveltime->getNumberOfParameters();
-}
-
-unsigned int DifferentialEvolutionAlgorithm::getResultArrayStep() const {
-    return individualsPerPopulation * traveltime->getNumberOfCommonResults();
-};
-
 void DifferentialEvolutionAlgorithm::setUp() {
     Gather* gather = Gather::getInstance();
 

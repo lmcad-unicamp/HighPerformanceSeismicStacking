@@ -42,6 +42,8 @@ void CudaStretchFreeAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
     float dtInSeconds = gather->getSamplePeriodInSeconds();
     int tauIndexDisplacement = gather->getTauIndexDisplacement();
     unsigned int windowSize = gather->getWindowSize();
+    float apm = gather->getApm();
+    float h0 = traveltime->getReferenceHalfoffset();
 
     dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(totalNumberOfParameters * samplesPerTrace) / static_cast<float>(threadCount))));
 
@@ -83,7 +85,27 @@ void CudaStretchFreeAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
             break;
         }
         case OCT: {
-            break;
+            computeSemblancesForOffsetContinuationTrajectory<<< dimGrid, threadCount >>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]),
+                filteredTracesCount,
+                samplesPerTrace,
+                apm,
+                m0,
+                h0,
+                dtInSeconds,
+                tauIndexDisplacement,
+                windowSize,
+                /* Parameter arrays */
+                CUDA_DEV_PTR(nonStretchFreeParameters[m0]),
+                CUDA_DEV_PTR(deviceParameterArray),
+                totalNumberOfParameters,
+                /* Output arrays */
+                CUDA_DEV_PTR(deviceNotUsedCountArray),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]),
+                CUDA_DEV_PTR(commonResultDeviceArrayMap[SemblanceCommonResult::STACK])
+            );
         }
         default:
             throw invalid_argument("Invalid traveltime model");

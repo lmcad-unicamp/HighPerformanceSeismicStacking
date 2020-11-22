@@ -1,10 +1,11 @@
 #pragma once
 
 #include "common/include/semblance/algorithm/StretchFreeAlgorithm.hpp"
+#include "opencl/include/semblance/algorithm/OpenCLComputeAlgorithm.hpp"
 
 #include <memory>
 
-class OpenCLStretchFreeAlgorithm : public StretchFreeAlgorithm {
+class OpenCLStretchFreeAlgorithm : public StretchFreeAlgorithm, public OpenCLComputeAlgorithm {
     public:
         OpenCLStretchFreeAlgorithm(
             shared_ptr<Traveltime> traveltime,
