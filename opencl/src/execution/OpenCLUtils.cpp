@@ -8,8 +8,17 @@ using namespace std;
 
 void openClAssert(cl_int errorCode, const char *file, int line) {
     if (errorCode != CL_SUCCESS) {
+        string errorMessage;
+
+        try {
+            errorMessage = openClErrorMessage(errorCode);
+        }
+        catch (const invalid_argument& exception) {
+            errorMessage = exception.what();
+        }
+
         ostringstream stringStream;
-        stringStream << "OpenCL error detected at " << file << "::" << line << " with error " << openClErrorMessage(errorCode);
+        stringStream << "OpenCL error detected at " << file << "::" << line << " with error " << errorMessage;
         LOGE(stringStream.str());
         throw runtime_error(stringStream.str());
     }
@@ -82,6 +91,6 @@ const string openClErrorMessage(cl_int errorCode) {
         case CL_INVALID_COMPILER_OPTIONS: return "CL_INVALID_COMPILER_OPTIONS";
         case CL_INVALID_LINKER_OPTIONS: return "CL_INVALID_LINKER_OPTIONS";
         case CL_INVALID_DEVICE_PARTITION_COUNT: return "CL_INVALID_DEVICE_PARTITION_COUNT";
-        default: return "Unknown OpenCL error";
+        default: throw invalid_argument("Unknow OpenCL error code: " + to_string(errorCode));
     }
 }
