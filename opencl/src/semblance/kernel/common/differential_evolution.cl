@@ -3,14 +3,21 @@
 
 #define PRIME 197063L
 
-inline float random_next(__global unsigned int* seed) {
-    // Lehmer random number generator
-    // https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-    unsigned long currentSeed = (unsigned long) *seed;
-    unsigned long product = currentSeed * PRIME;
-    *seed = product % UINT_MAX;
+inline float random_next(__global unsigned int* state) {
+    // https://en.wikipedia.org/wiki/Xorshift#xorwow
+    unsigned int t = state[4];
+    unsigned int s = state[0];
+    state[4] = state[3];
+    state[3] = state[2];
+    state[2] = state[1];
+    state[1] = s;
+    t ^= t >> 2;
+    t ^= t << 1;
+    t ^= s ^ (s << 4);
+    state[0] = t;
+    state[5] += 362437;
 
-    return  (float) (*seed) / (float) UINT_MAX;
+    return (float) (t + state[5]) / 4294967295.0f;
 }
 
 __kernel
@@ -18,7 +25,6 @@ void startPopulations(
     __global __write_only float *x,
     __global __read_only float *min,
     __global __read_only float *max,
-    __global unsigned int *st,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
     unsigned int numberOfParameters
@@ -26,12 +32,11 @@ void startPopulations(
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
     unsigned int sampleIndex = threadIndex / individualsPerPopulation;
     unsigned int individualIndex = threadIndex % individualsPerPopulation;
-    unsigned int seedIndex = threadIndex;
 
     if (sampleIndex < samplesPerTrace) {
         unsigned int offset = (sampleIndex * individualsPerPopulation + individualIndex) * numberOfParameters;
         for (unsigned int parameterIndex = 0; parameterIndex < numberOfParameters; parameterIndex++) {
-            float ratio = random_next(&st[seedIndex]);
+            float ratio = (float) individualIndex / (float) individualsPerPopulation;
             x[offset + parameterIndex] = min[parameterIndex] + ratio * (max[parameterIndex] - min[parameterIndex]);
         }
     }
@@ -51,7 +56,7 @@ void mutatePopulations(
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
     unsigned int sampleIndex = threadIndex / individualsPerPopulation;
     unsigned int individualIndex = threadIndex % individualsPerPopulation;
-    unsigned int seedIndex = threadIndex;
+    unsigned int seedIndex = 6 * threadIndex;
 
     if (sampleIndex < samplesPerTrace) {
         unsigned int popIndex = sampleIndex * individualsPerPopulation * numberOfParameters;
@@ -65,15 +70,15 @@ void mutatePopulations(
             p3 = random_next(&st[seedIndex]);
 
             r1 = popIndex +
-                (unsigned int) (p2 * (float)(individualsPerPopulation - 1)) * numberOfParameters +
+                ((unsigned int) (p2 * (float)(individualsPerPopulation - 1))) * numberOfParameters +
                 parameterIndex;
 
             r2 = popIndex +
-                (unsigned int) (p2 * (float)(individualsPerPopulation - 1)) * numberOfParameters +
+                ((unsigned int) (p2 * (float)(individualsPerPopulation - 1))) * numberOfParameters +
                 parameterIndex;
 
             r3 = popIndex +
-                (unsigned int) (p2 * (float)(individualsPerPopulation - 1)) * numberOfParameters +
+                ((unsigned int) (p2 * (float)(individualsPerPopulation - 1))) * numberOfParameters +
                 parameterIndex;
 
             float newIndividual = x[r1] + F_FAC * (x[r2] - x[r3]);
@@ -98,7 +103,7 @@ void crossoverPopulations(
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
     unsigned int sampleIndex = threadIndex / individualsPerPopulation;
     unsigned int individualIndex = threadIndex % individualsPerPopulation;
-    unsigned int seedIndex = threadIndex;
+    unsigned int seedIndex = 6 * threadIndex;
 
     if (sampleIndex < samplesPerTrace) {
         unsigned int l = (unsigned int)(random_next(&st[seedIndex]) * (float)(numberOfParameters - 1));

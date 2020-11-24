@@ -228,7 +228,8 @@ void OpenCLDifferentialEvolutionAlgorithm::setupRandomSeedArray() {
     auto commandQueue = openClContext->getCommandQueue();
 
     unsigned int samplesPerTrace = gather->getSamplesPerTrace();
-    unsigned int seedCount = samplesPerTrace * individualsPerPopulation;
+
+    unsigned int seedCount = 6 * samplesPerTrace * individualsPerPopulation;
 
     st.reset(new cl::Buffer(
         openClContext->getContext(),
@@ -276,7 +277,6 @@ void OpenCLDifferentialEvolutionAlgorithm::startAllPopulations() {
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, OPENCL_DEV_BUFFER(x)));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, OPENCL_DEV_BUFFER(min)));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, OPENCL_DEV_BUFFER(max)));
-    OPENCL_ASSERT(startPopulations.setArg(argIndex++, *st));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &individualsPerPopulation));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &samplesPerTrace));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &numberOfParameters));
