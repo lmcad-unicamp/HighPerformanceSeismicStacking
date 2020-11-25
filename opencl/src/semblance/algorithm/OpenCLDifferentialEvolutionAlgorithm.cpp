@@ -229,6 +229,10 @@ void OpenCLDifferentialEvolutionAlgorithm::setupRandomSeedArray() {
 
     unsigned int samplesPerTrace = gather->getSamplesPerTrace();
 
+    // XORWOW - CUDA's default pseudorandom number generator.
+    // https://docs.nvidia.com/cuda/curand/device-api-overview.html
+    // https://en.wikipedia.org/wiki/Xorshift#xorwow
+    // It uses 5 states (st[0] ... st[4]) plus 1 counter (st[5]).
     unsigned int seedCount = 6 * samplesPerTrace * individualsPerPopulation;
 
     st.reset(new cl::Buffer(
@@ -277,6 +281,7 @@ void OpenCLDifferentialEvolutionAlgorithm::startAllPopulations() {
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, OPENCL_DEV_BUFFER(x)));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, OPENCL_DEV_BUFFER(min)));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, OPENCL_DEV_BUFFER(max)));
+    OPENCL_ASSERT(startPopulations.setArg(argIndex++, *st));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &individualsPerPopulation));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &samplesPerTrace));
     OPENCL_ASSERT(startPopulations.setArg(argIndex++, sizeof(unsigned int), &numberOfParameters));

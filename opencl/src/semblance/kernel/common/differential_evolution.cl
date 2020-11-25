@@ -1,10 +1,13 @@
 #include "common/include/gpu/interface.h"
-#include <limits.h>
 
 #define PRIME 197063L
+#define UINT_MAX 4294967295
 
 inline float random_next(__global unsigned int* state) {
+    // XORWOW - CUDA's default pseudorandom number generator.
+    // https://docs.nvidia.com/cuda/curand/device-api-overview.html
     // https://en.wikipedia.org/wiki/Xorshift#xorwow
+
     unsigned int t = state[4];
     unsigned int s = state[0];
     state[4] = state[3];
@@ -17,7 +20,7 @@ inline float random_next(__global unsigned int* state) {
     state[0] = t;
     state[5] += 362437;
 
-    return (float) (t + state[5]) / 4294967295.0f;
+    return (float) (t + state[5]) / (float) UINT_MAX;
 }
 
 __kernel
@@ -25,6 +28,7 @@ void startPopulations(
     __global __write_only float *x,
     __global __read_only float *min,
     __global __read_only float *max,
+    __global unsigned int *st,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
     unsigned int numberOfParameters
@@ -32,11 +36,12 @@ void startPopulations(
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
     unsigned int sampleIndex = threadIndex / individualsPerPopulation;
     unsigned int individualIndex = threadIndex % individualsPerPopulation;
+    unsigned int seedIndex = 6 * threadIndex;
 
     if (sampleIndex < samplesPerTrace) {
         unsigned int offset = (sampleIndex * individualsPerPopulation + individualIndex) * numberOfParameters;
         for (unsigned int parameterIndex = 0; parameterIndex < numberOfParameters; parameterIndex++) {
-            float ratio = (float) individualIndex / (float) individualsPerPopulation;
+            float ratio = random_next(&st[seedIndex]);
             x[offset + parameterIndex] = min[parameterIndex] + ratio * (max[parameterIndex] - min[parameterIndex]);
         }
     }
@@ -70,7 +75,7 @@ void mutatePopulations(
             p3 = random_next(&st[seedIndex]);
 
             r1 = popIndex +
-                ((unsigned int) (p2 * (float)(individualsPerPopulation - 1))) * numberOfParameters +
+                ((unsigned int) (p1 * (float)(individualsPerPopulation - 1))) * numberOfParameters +
                 parameterIndex;
 
             r2 = popIndex +
@@ -78,7 +83,7 @@ void mutatePopulations(
                 parameterIndex;
 
             r3 = popIndex +
-                ((unsigned int) (p2 * (float)(individualsPerPopulation - 1))) * numberOfParameters +
+                ((unsigned int) (p3 * (float)(individualsPerPopulation - 1))) * numberOfParameters +
                 parameterIndex;
 
             float newIndividual = x[r1] + F_FAC * (x[r2] - x[r3]);
