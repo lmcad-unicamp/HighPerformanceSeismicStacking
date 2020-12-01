@@ -1,4 +1,5 @@
 #include "common/include/execution/SpitzFactory.hpp"
+#include "common/include/execution/SpitzFactoryAdapter.hpp"
 #include "common/include/model/Gather.hpp"
 #include "common/include/output/Logger.hpp"
 
@@ -11,44 +12,7 @@ SpitzFactory::SpitzFactory(
     Parser* p,
     ComputeAlgorithmBuilder* builder,
     DeviceContextBuilder* deviceBuilder
-) : parser(p), builder(builder), deviceBuilder(deviceBuilder) {
-}
-
-void SpitzFactory::initialize(int argc, const char *argv[]) {
-    Gather* gather = Gather::getInstance();
-
-    parser->parseArguments(argc, argv);
-
-    if (!gather->isGatherRead()) {
-        parser->readGather();
-    }
-
-    if (traveltime == nullptr) {
-        LOGI("Initializing traveltime");
-        traveltime.reset(parser->parseTraveltime());
-    }
-
-    LOGI("Factory initialized");
-}
-
-spits::job_manager *SpitzFactory::create_job_manager(
-    int argc,
-    const char *argv[],
-    spits::istream& jobinfo,
-    spits::metrics& metrics
-) {
-    initialize(argc, argv);
-    return new SpitzJobManager();
-}
-
-spits::committer *SpitzFactory::create_committer(
-    int argc,
-    const char *argv[],
-    spits::istream& jobinfo,
-    spits::metrics& metrics
-) {
-    initialize(argc, argv);
-    return new SpitzCommitter(traveltime, parser->getOutputDirectory(), parser->getFilename(), parser->getParserType());
+) : SpitzFactoryAdapter(p), builder(builder), deviceBuilder(deviceBuilder) {
 }
 
 spits::worker *SpitzFactory::create_worker(
