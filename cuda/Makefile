@@ -4,6 +4,8 @@ SHELL = /bin/bash
 # Compiler flags
 #
 
+PROJECT_ROOT_PATH = $(dir $(shell pwd))
+
 ENABLE_DEBUG := no
 ifeq ($(ENABLE_DEBUG), yes)
 	CFLAGS += -g -O0
@@ -16,7 +18,7 @@ endif
 ENABLE_PROFILING := no
 ifeq ($(ENABLE_PROFILING), yes)
 	CFLAGS += -DPROFILE_ENABLED
-	NVCCFLAGS += -DPROFILE_ENABLED -lineinfo
+	NVCCFLAGS += -DPROFILE_ENABLED
 endif
 
 LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -lcuda -lcurand -L/usr/lib/gcc/x86_64-linux-gnu/8/ -lstdc++fs
@@ -27,7 +29,6 @@ NVCCFLAGS += --use_fast_math -Xcompiler -Wall -Xcompiler -fPIC -arch $(ARCH)
 # Folder paths
 #
 
-PROJECT_ROOT_PATH = $(dir $(shell pwd))
 BINARY_PATH = $(PROJECT_ROOT_PATH)/cuda/bin/
 SINGLE_HOST_PATH = $(PROJECT_ROOT_PATH)/cuda/main/single_host
 SPITS_PATH = $(PROJECT_ROOT_PATH)/cuda/main/spitz
