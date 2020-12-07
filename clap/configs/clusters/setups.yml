@@ -14,17 +14,21 @@ setups:
       name: run-command
       group: commands-common
       extra:
-        cmd: "git pull origin master"
-        workdir: /home/ubuntu/HighPerformanceSeismicStacking
+        cmd: "git clean -xdf"
+        workdir: "{{ project_root }}"
         ansible_python_interpreter: /usr/bin/python3
 
     - type: action
       name: run-command
       group: commands-common
       extra:
-        cmd: "git clean -xdf"
-        workdir: /home/ubuntu/HighPerformanceSeismicStacking
+        cmd: "git pull origin master"
+        workdir: "{{ project_root }}"
         ansible_python_interpreter: /usr/bin/python3
+
+  ##
+  ## BEGIN EFS setup section.
+  ##
 
   setup-efs:
     groups:
@@ -43,10 +47,24 @@ setups:
       group: ec2-efs
       extra:
         efs_mount_ip: "172.31.15.69"
-        efs_mount_point: "/home/ubuntu/nfs"
+        efs_mount_point: "{{ nfs_mount_point }}"
         ansible_python_interpreter: /usr/bin/python3
 
-  setup-binaries:
+  ##
+  ## END EFS setup section.
+  ##
+
+  ##
+  ## BEGIN Job manager setup section.
+  ##
+
+  setup-spits-jobmanager:
+    groups:
+    - name: spits/jobmanager
+      extra:
+        ansible_python_interpreter: /usr/bin/python3
+
+  setup-binaries-jobmanager:
     groups:
     - name: commands-common
 
@@ -55,8 +73,8 @@ setups:
       name: run-command
       group: commands-common
       extra:
-        cmd: "mkdir -p {{ instance_type }}"
-        workdir: /home/ubuntu/nfs/out
+        cmd: "mkdir -p {{ test_dir }}/jobmanager"
+        workdir: "{{ nfs_mount_point }}"
         ansible_python_interpreter: /usr/bin/python3
 
     - type: action
@@ -64,22 +82,29 @@ setups:
       group: commands-common
       extra:
         cmd: "make clean"
-        workdir: /home/ubuntu/HighPerformanceSeismicStacking/cuda
+        workdir: "{{ project_root }}/common"
         ansible_python_interpreter: /usr/bin/python3
 
     - type: action
       name: run-command
       group: commands-common
       extra:
-        cmd: "make spits ARCH={{ compute_capability }}"
-        workdir: /home/ubuntu/HighPerformanceSeismicStacking/cuda/
+        cmd: "make all -j16"
+        workdir: "{{ project_root }}/common/"
         ansible_python_interpreter: /usr/bin/python3
 
-  setup-spits-jobmanager:
-    groups:
-    - name: spits/jobmanager
-      extra:
-        ansible_python_interpreter: /usr/bin/python3
+  ##
+  ## END Job manager setup section.
+  ##
+
+  ##
+  ## BEGIN Framework task manager setup section.
+  ## PARAMETERS:
+  ##    compute_capability: specific for cuda.
+  ##    framework: either cuda or opencl.
+  ##    project_root: project's root folder.
+  ##    test_dir: output data folder.
+  ##
 
   setup-spits-taskmanager:
     groups:
@@ -87,18 +112,82 @@ setups:
       extra:
         ansible_python_interpreter: /usr/bin/python3
 
-  setup-spits-start-bin:
+  setup-binaries-taskmanager:
+    groups:
+    - name: commands-common
+
+    actions:
+    - type: action
+      name: run-command
+      group: commands-common
+      extra:
+        cmd: "mkdir -p {{ test_dir }}/taskmanager"
+        workdir: "{{ nfs_mount_point }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - type: action
+      name: run-command
+      group: commands-common
+      extra:
+        cmd: "make clean"
+        workdir: "{{ project_root }}/{{ framework }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - type: action
+      name: run-command
+      group: commands-common
+      extra:
+        cmd: "make spits -j16 ARCH={{ compute_capability }}"
+        workdir: "{{ project_root }}/{{ framework }}/"
+        ansible_python_interpreter: /usr/bin/python3
+
+  ##
+  ## END Framework Task manager setup section.
+  ##
+
+  ##
+  ## BEGIN Spits job setup section.
+  ##    project_root: project's root folder.
+  ##    spits_args: arguments to be passed when executing spits binary.
+  ##    spits_bin: spits binary's name.
+  ##
+
+  setup-spits-job-jobmanager:
     actions:
     - type: action
       name: job-create
       group: spits
       extra:
         jobid: "{{ jobid }}"
-        spits_binary: "/home/ubuntu/HighPerformanceSeismicStacking/cuda/bin/spitz_de"
+        spits_binary: "{{ project_root }}/common/bin/{{ spits_bin }}"
         spits_args: "{{ spits_args }}"
         COPY_BINARY: "false"
         ansible_python_interpreter: /usr/bin/python3
 
+  setup-spits-job-taskmanager:
+    actions:
+    - type: action
+      name: job-create
+      group: spits
+      extra:
+        jobid: "{{ jobid }}"
+        spits_binary: "{{ project_root }}/{{ framework }}/bin/{{ spits_bin }}"
+        spits_args: "{{ spits_args }}"
+        COPY_BINARY: "false"
+        ansible_python_interpreter: /usr/bin/python3
+
+  ##
+  ## END Spits job setup section.
+  ##
+
+  ##
+  ## BEGIN Spits job start section.
+  ##    jobid: spits job's id.
+  ##    tmargs: arguments for task manager.
+  ##
+
+  setup-spits-start-bin:
+    actions:
     - type: action
       name: start
       group: spits
@@ -114,3 +203,7 @@ setups:
       group: spits
       extra:
         jobid: "{{ jobid }}"
+
+  ##
+  ## END Spits job start section.
+  ##
