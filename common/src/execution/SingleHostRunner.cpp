@@ -134,7 +134,10 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         for (unsigned int i = 0; i < static_cast<unsigned int>(StatisticResult::CNT); i++) {
             StatisticResult statResult = static_cast<StatisticResult>(i);
-            dumper.dumpStatisticalResult(STATISTIC_NAME_MAP[statResult], resultSet->get(statResult));
+            const StatisticalMidpointResult& statisticalResult = resultSet->get(statResult);
+            const string& statResultName = STATISTIC_NAME_MAP[statResult];
+            dumper.dumpStatisticalResult(statResultName, statisticalResult);
+            LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
         }
 
         chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
