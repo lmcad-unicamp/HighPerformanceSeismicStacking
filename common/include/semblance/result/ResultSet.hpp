@@ -20,11 +20,17 @@ class ResultSet {
     public:
         ResultSet(unsigned int numberOfResults, unsigned int samples);
 
-        const MidpointResult& getArrayForResult(unsigned int resultIndex) const;
+        void copyFrom(const ResultSet& other);
+
+        const MidpointResult& get(unsigned int resultIndex) const;
 
         const StatisticalMidpointResult& get(StatisticResult statResult) const;
 
+        const unordered_map<StatisticResult, StatisticalMidpointResult>& getStatisticalMidpointResultMap() const;
+
         void setAllResultsForMidpoint(float m0, const vector<float>& array);
+
+        void setResultForMidpoint(float m0, unsigned int resultIndex, const vector<float>& array);
 
         void setStatisticalResultForMidpoint(float m0, StatisticResult stat, float statValue);
 };

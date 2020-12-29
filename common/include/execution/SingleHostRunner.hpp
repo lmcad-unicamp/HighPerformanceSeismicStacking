@@ -38,6 +38,8 @@ class SingleHostRunner {
 
         int main(int argc, const char *argv[]);
 
+        ResultSet* buildResultSetForThread();
+
         ComputeAlgorithm* getComputeAlgorithm();
 
         ResultSet* getResultSet();

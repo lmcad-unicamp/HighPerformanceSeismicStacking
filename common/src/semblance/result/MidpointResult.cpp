@@ -1,12 +1,18 @@
 #include "common/include/semblance/result/MidpointResult.hpp"
 
+using namespace std;
+
+const map<float, vector<float>>& MidpointResult::getResultMap() const {
+    return resultMap;
+}
+
 void MidpointResult::save(float m0, vector<float>::const_iterator start, vector<float>::const_iterator end) {
-    MidpointResult[m0].assign(start, end);
+    resultMap[m0].assign(start, end);
 }
 
 const vector<float>& MidpointResult::get(float m0) const {
-    if (MidpointResult.find(m0) != MidpointResult.end()) {
-        return MidpointResult.at(m0);
+    if (resultMap.find(m0) != resultMap.end()) {
+        return resultMap.at(m0);
     }
 
     throw invalid_argument("Empty result for given midpoint.");

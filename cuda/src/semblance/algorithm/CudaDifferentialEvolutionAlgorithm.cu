@@ -41,7 +41,7 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
     float dtInSeconds = gather->getSamplePeriodInSeconds();
     int tauIndexDisplacement = gather->getTauIndexDisplacement();
     unsigned int windowSize = gather->getWindowSize();
-    float apm = gather->getApm();    
+    float apm = gather->getApm();
     float h0 = traveltime->getReferenceHalfoffset();
 
     dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(individualsPerPopulation * samplesPerTrace) / static_cast<float>(threadCount))));
@@ -110,7 +110,7 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
 
 void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
-    LOGI("Selecting traces for m0 = " << m0);
+    LOGD("Selecting traces for m0 = " << m0);
 
     Gather* gather = Gather::getInstance();
 
@@ -120,7 +120,7 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
     float dtInSeconds = gather->getSamplePeriodInSeconds();
     int tauIndexDisplacement = gather->getTauIndexDisplacement();
     unsigned int windowSize = gather->getWindowSize();
-    float apm = gather->getApm();    
+    float apm = gather->getApm();
     float h0 = traveltime->getReferenceHalfoffset();
 
     vector<unsigned char> usedTraceMask(traceCount);
@@ -178,14 +178,12 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
 
     MEASURE_EXEC_TIME(copyTime, copyOnlySelectedTracesToDevice(usedTraceMask));
 
-    LOGI("Execution time for copying traces is " << copyTime.count() << "s");
+    LOGH("Execution time for copying traces is " << copyTime.count() << "s");
 }
 
 void CudaDifferentialEvolutionAlgorithm::setupRandomSeedArray() {
 
     Gather* gather = Gather::getInstance();
-
-    deviceContext->activate();
 
     unsigned int samplesPerTrace = gather->getSamplesPerTrace();
 

@@ -2,9 +2,10 @@
 
 using namespace std;
 
-SpitzWorker::SpitzWorker(ComputeAlgorithm* computeAlgorithm, spits::metrics& metrics)
+SpitzWorker::SpitzWorker(ComputeAlgorithm* computeAlgorithm, spits::metrics& metrics, shared_ptr<DeviceContext> context)
 : metrics(metrics),
-  computeAlgorithm(computeAlgorithm) {
+  computeAlgorithm(computeAlgorithm),
+  deviceContext(context) {
 }
 
 int SpitzWorker::run(spits::istream& task, const spits::pusher& result) {
@@ -14,6 +15,8 @@ int SpitzWorker::run(spits::istream& task, const spits::pusher& result) {
     float m0 = task.read_float();
 
     LOGI("m0 = " << m0);
+
+    deviceContext->activate();
 
     if (!computeAlgorithm->isSetUp()) {
         computeAlgorithm->setUp();

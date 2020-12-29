@@ -23,12 +23,13 @@ LinearSearchAlgorithm::LinearSearchAlgorithm(
 }
 
 void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
+
+    LOGI("Computing semblance for m0 = " << m0);
+
     Gather* gather = Gather::getInstance();
 
     unsigned int numberOfSamplesPerTrace = gather->getSamplesPerTrace();
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
-
-    deviceContext->activate();
 
     deviceResultArray->reset();
     deviceNotUsedCountArray->reset();
@@ -40,7 +41,7 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
 
-    LOGI("totalNumberOfParameters = " << totalNumberOfParameters);
+    LOGH("totalNumberOfParameters = " << totalNumberOfParameters);
 
     MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
 
@@ -87,8 +88,6 @@ void LinearSearchAlgorithm::setDiscretizationGranularityForParameter(
 void LinearSearchAlgorithm::setUp() {
 
     chrono::duration<double> initalizationExecutionTime = chrono::duration<double>::zero();
-
-    deviceContext->activate();
 
     setupArrays();
 

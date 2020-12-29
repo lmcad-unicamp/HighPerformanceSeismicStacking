@@ -99,9 +99,8 @@ void ComputeAlgorithm::saveStatisticalResults(
 
     computedStatisticalResults[StatisticResult::TOTAL_KERNEL_EXECUTION_TIME] = totalExecutionTime.count();
 
-    LOGI("Total execution time for selecting traces is " << selectionExecutionTime.count() << "s");
-
-    LOGI("Total execution time for kernels is " << totalExecutionTime.count() << "s");
+    LOGH("Total execution time for selecting traces is " << selectionExecutionTime.count() << "s");
+    LOGH("Total execution time for kernels is " << totalExecutionTime.count() << "s");
 }
 
 void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
@@ -115,7 +114,7 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
 
     filteredTracesCount = accumulate(usedTraceMask.begin(), usedTraceMask.end(), 0);
 
-    LOGI("Selected " << filteredTracesCount << " traces");
+    LOGH("Selected " << filteredTracesCount << " traces");
 
     /* Reallocate filtered sample array */
     deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]->reallocate(filteredTracesCount * gather->getSamplesPerTrace());
@@ -149,7 +148,7 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]->copyFrom(tempHalfoffset);
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]->copyFrom(tempHalfoffsetSquared);
 
-    LOGI("Copy time is " << copyExecutionTime.count());
+    LOGH("Copy time is " << copyExecutionTime.count());
 }
 
 void ComputeAlgorithm::compileKernels(const string& deviceKernelSourcePath) {

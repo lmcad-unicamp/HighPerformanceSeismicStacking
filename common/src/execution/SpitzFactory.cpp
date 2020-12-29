@@ -30,5 +30,5 @@ spits::worker *SpitzFactory::create_worker(
 
     ComputeAlgorithm* computeAlgorithm = parser->parseComputeAlgorithm(builder, deviceContext, traveltime);
 
-    return new SpitzWorker(computeAlgorithm, metrics);
+    return new SpitzWorker(computeAlgorithm, metrics, deviceContext);
 }
