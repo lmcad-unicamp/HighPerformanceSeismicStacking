@@ -43,13 +43,7 @@ mutex& SingleHostRunner::getQueueMutex() {
 ComputeAlgorithm* SingleHostRunner::getComputeAlgorithm() {
     lock_guard<mutex> autoLock(deviceMutex);
     shared_ptr<DeviceContext> devContext(deviceContextBuilder->build(deviceIndex++));
-    devContext->activate();
     return parser->parseComputeAlgorithm(algorithmBuilder, devContext, traveltime);
-}
-
-ResultSet* SingleHostRunner::buildResultSetForThread() {
-    Gather* gather = Gather::getInstance();
-    return new ResultSet(traveltime->getNumberOfResults(), gather->getSamplesPerTrace());
 }
 
 void SingleHostRunner::workerThread(SingleHostRunner *ref) {
@@ -57,11 +51,12 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
     unique_ptr<ComputeAlgorithm> computeAlgorithm(ref->getComputeAlgorithm());
 
+    mutex& resultSetMutex = ref->getResultSetMutex();
     mutex& queueMutex = ref->getQueueMutex();
 
     queue<float>& mipointQueue = ref->getMidpointQueue();
 
-    unique_ptr<ResultSet> threadResultSet(ref->buildResultSetForThread());
+    ResultSet* resultSet = ref->getResultSet();
 
     computeAlgorithm->setUp();
 
@@ -81,22 +76,17 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
         computeAlgorithm->computeSemblanceAndParametersForMidpoint(m0);
 
-        threadResultSet->setAllResultsForMidpoint(m0, computeAlgorithm->getComputedResults());
+        resultSetMutex.lock();
+
+        resultSet->setAllResultsForMidpoint(m0, computeAlgorithm->getComputedResults());
 
         for (unsigned int statResultIdx = 0; statResultIdx < static_cast<unsigned int>(StatisticResult::CNT); statResultIdx++) {
             StatisticResult statResult = static_cast<StatisticResult>(statResultIdx);
-            threadResultSet->setStatisticalResultForMidpoint(m0, statResult, computeAlgorithm->getStatisticalResult(statResult));
+            resultSet->setStatisticalResultForMidpoint(m0, statResult, computeAlgorithm->getStatisticalResult(statResult));
         }
 
+        resultSetMutex.unlock();
     }
-
-    ResultSet* resultSet = ref->getResultSet();
-    mutex& resultSetMutex = ref->getResultSetMutex();
-
-    /* Copy thread result to global object */
-    resultSetMutex.lock();
-    resultSet->copyFrom(*threadResultSet);
-    resultSetMutex.unlock();
 }
 
 int SingleHostRunner::main(int argc, const char *argv[]) {
@@ -134,15 +124,12 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
             threads[deviceId].join();
         }
 
-        chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
-        LOGI("It took " << totalExecutionTime.count() << " seconds to compute.");
-
         dumper.dumpGatherParameters(parser->getInputFilePath());
 
         dumper.dumpTraveltime(traveltime.get());
 
         for (unsigned int i = 0; i < traveltime->getNumberOfResults(); i++) {
-            dumper.dumpResult(traveltime->getDescriptionForResult(i), resultSet->get(i));
+            dumper.dumpResult(traveltime->getDescriptionForResult(i), resultSet->getArrayForResult(i));
         }
 
         for (unsigned int i = 0; i < static_cast<unsigned int>(StatisticResult::CNT); i++) {
@@ -153,7 +140,10 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
             LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
         }
 
+        chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
+
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
+        LOGI("It took " << totalExecutionTime.count() << "s to compute.");
 
         return 0;
     }

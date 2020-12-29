@@ -1,7 +1,5 @@
 #include "common/include/semblance/result/StatisticalMidpointResult.hpp"
 
-using namespace std;
-
 float StatisticalMidpointResult::getStatisticalResultForMidpoint(float m0) const {
     if (statisticalMidpointResult.find(m0) != statisticalMidpointResult.end()) {
         return statisticalMidpointResult.at(m0);
@@ -31,8 +29,4 @@ float StatisticalMidpointResult::getAverageOfAllMidpoints() const {
     }
 
     return sum / count;
-}
-
-const map<float, float>& StatisticalMidpointResult::getStatisticalMidpointResultMap() const {
-    return statisticalMidpointResult;
 }

@@ -14,8 +14,7 @@ class SpitzWorker : public spits::worker {
     protected:
         spits::metrics& metrics;
         unique_ptr<ComputeAlgorithm> computeAlgorithm;
-        shared_ptr<DeviceContext> deviceContext;
     public:
-        SpitzWorker(ComputeAlgorithm* computeAlgorithm, spits::metrics& metrics, shared_ptr<DeviceContext> context);
+        SpitzWorker(ComputeAlgorithm* computeAlgorithm, spits::metrics& metrics);
         int run(spits::istream& task, const spits::pusher& result);
 };

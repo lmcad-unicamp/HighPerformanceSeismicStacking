@@ -33,6 +33,8 @@ CudaLinearSearchAlgorithm::CudaLinearSearchAlgorithm(
 
 void CudaLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
 
+    LOGI("Computing semblance for m0 = " << m0);
+
     if (!filteredTracesCount) {
         LOGI("No trace has been selected for m0 = " << m0 << ". Skipping.");
         return;
@@ -242,7 +244,7 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
     dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(traceCount) / static_cast<float>(threadCount))));
 
-    LOGH("Using " << dimGrid.x << " blocks for traces filtering (threadCount = "<< threadCount << ")");
+    LOGI("Using " << dimGrid.x << " blocks for traces filtering (threadCount = "<< threadCount << ")");
 
     chrono::duration<double> copyTime = chrono::duration<double>::zero();
 
@@ -269,14 +271,14 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
             vector<float> parameterSampleArray(samplePop * 2);
 
             default_random_engine generator;
-
+    
             for (unsigned int prmtr = 0; prmtr < 2; prmtr++) {
-
+    
                 float min = traveltime->getLowerBoundForParameter(prmtr);
                 float max = traveltime->getUpperBoundForParameter(prmtr);
-
+    
                 uniform_real_distribution<float> uniformDist(min, max);
-
+    
                 for (unsigned int idx = 0; idx < samplePop; idx++) {
                     float randomParameter = uniformDist(generator);
                     if (prmtr == OffsetContinuationTrajectory::VELOCITY) {
@@ -285,7 +287,7 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
                     parameterSampleArray[idx * 2 + prmtr] = randomParameter;
                 }
             }
-
+    
             unique_ptr<DataContainer> selectionParameterArray(dataFactory->build(2 * samplePop, deviceContext));
 
             selectionParameterArray->copyFrom(parameterSampleArray);
@@ -319,5 +321,5 @@ void CudaLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
     MEASURE_EXEC_TIME(copyTime, copyOnlySelectedTracesToDevice(usedTraceMask));
 
-    LOGH("Execution time for copying traces is " << copyTime.count() << "s");
+    LOGI("Execution time for copying traces is " << copyTime.count() << "s");
 }

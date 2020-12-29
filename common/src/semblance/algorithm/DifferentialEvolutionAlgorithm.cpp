@@ -18,15 +18,14 @@ DifferentialEvolutionAlgorithm::DifferentialEvolutionAlgorithm(
 }
 
 void DifferentialEvolutionAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
-
-    LOGI("Computing semblance for m0 = " << m0);
-
     Gather* gather = Gather::getInstance();
 
     unsigned int numberOfSamplesPerTrace = gather->getSamplesPerTrace();
 
     chrono::duration<double> selectionExecutionTime = chrono::duration<double>::zero();
     chrono::duration<double> totalExecutionTime = chrono::duration<double>::zero();
+
+    deviceContext->activate();
 
     deviceNotUsedCountArray->reset();
     fx->reset();
@@ -80,6 +79,8 @@ void DifferentialEvolutionAlgorithm::computeSemblanceAndParametersForMidpoint(fl
 
 void DifferentialEvolutionAlgorithm::setUp() {
     Gather* gather = Gather::getInstance();
+
+    deviceContext->activate();
 
     unsigned int numberOfParameters = traveltime->getNumberOfParameters();
     unsigned int numberOfCommonResults = traveltime->getNumberOfCommonResults();

@@ -14,8 +14,8 @@ SpitzCommitter::SpitzCommitter(
     const string& folder,
     const string& file,
     const string& computeMethod
-) : traveltime(model),
-    filePath(file),
+) : traveltime(model), 
+    filePath(file), 
     dumper(folder, file, computeMethod, traveltime->getTraveltimeWord()) {
 
     Gather* gather = Gather::getInstance();
@@ -67,7 +67,7 @@ int SpitzCommitter::commit_job(const spits::pusher& final_result) {
     for (unsigned int i = 0; i < traveltime->getNumberOfResults(); i++) {
         dumper.dumpResult(
             traveltime->getDescriptionForResult(i),
-            resultSet->get(i)
+            resultSet->getArrayForResult(i)
         );
     }
 
