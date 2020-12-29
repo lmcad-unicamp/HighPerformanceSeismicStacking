@@ -73,7 +73,10 @@ int SpitzCommitter::commit_job(const spits::pusher& final_result) {
 
     for (unsigned int i = 0; i < static_cast<unsigned int>(StatisticResult::CNT); i++) {
         StatisticResult statResult = static_cast<StatisticResult>(i);
-        dumper.dumpStatisticalResult(STATISTIC_NAME_MAP[statResult], resultSet->get(statResult));
+        const StatisticalMidpointResult& statisticalResult = resultSet->get(statResult);
+        const string& statResultName = STATISTIC_NAME_MAP[statResult];
+        dumper.dumpStatisticalResult(statResultName, statisticalResult);
+        LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
     }
 
     // A result must be pushed even if the final result is not passed on
