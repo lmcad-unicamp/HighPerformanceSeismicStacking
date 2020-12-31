@@ -13,12 +13,14 @@ class ComputeAlgorithmBuilder {
         virtual LinearSearchAlgorithm* buildLinearSearchAlgorithm(
                 shared_ptr<Traveltime> traveltime,
                 shared_ptr<DeviceContext> context,
+                unsigned int threadCount,
                 const vector<int>& discretizationArray
         ) = 0;
 
         virtual DifferentialEvolutionAlgorithm* buildDifferentialEvolutionAlgorithm(
                 shared_ptr<Traveltime> traveltime,
                 shared_ptr<DeviceContext> context,
+                unsigned int threadCount,
                 unsigned int generation,
                 unsigned int individualsPerPopulation
         ) = 0;
@@ -26,6 +28,7 @@ class ComputeAlgorithmBuilder {
         virtual StretchFreeAlgorithm* buildStretchFreeAlgorithm(
                 shared_ptr<Traveltime> traveltime,
                 shared_ptr<DeviceContext> context,
+                unsigned int threadCount,
                 const vector<string>& parameterFileArray
         ) = 0;
 };

@@ -20,6 +20,7 @@ ComputeAlgorithmBuilder* CudaComputeAlgorithmBuilder::getInstance() {
 LinearSearchAlgorithm* CudaComputeAlgorithmBuilder::buildLinearSearchAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
+    unsigned int threadCount,
     const vector<int>& discretizationArray
 ) {
     if (discretizationArray.size() != traveltime->getNumberOfParameters()) {
@@ -31,7 +32,7 @@ LinearSearchAlgorithm* CudaComputeAlgorithmBuilder::buildLinearSearchAlgorithm(
 
     DataContainerBuilder* dataFactory = CudaDataContainerBuilder::getInstance();
 
-    LinearSearchAlgorithm* computeAlgorithm = new CudaLinearSearchAlgorithm(traveltime, context, dataFactory);
+    LinearSearchAlgorithm* computeAlgorithm = new CudaLinearSearchAlgorithm(traveltime, context, dataFactory, threadCount);
 
     for (unsigned int i = 0; i < traveltime->getNumberOfParameters(); i++) {
         computeAlgorithm->setDiscretizationGranularityForParameter(i, discretizationArray[i]);
@@ -43,17 +44,19 @@ LinearSearchAlgorithm* CudaComputeAlgorithmBuilder::buildLinearSearchAlgorithm(
 DifferentialEvolutionAlgorithm* CudaComputeAlgorithmBuilder::buildDifferentialEvolutionAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
+    unsigned int threadCount,
     unsigned int generation,
     unsigned int individualsPerPopulation
 ) {
     DataContainerBuilder* dataFactory = CudaDataContainerBuilder::getInstance();
 
-    return new CudaDifferentialEvolutionAlgorithm(traveltime, context, dataFactory, generation, individualsPerPopulation);
+    return new CudaDifferentialEvolutionAlgorithm(traveltime, context, dataFactory, threadCount, generation, individualsPerPopulation);
 }
 
 StretchFreeAlgorithm* CudaComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
+    unsigned int threadCount,
     const vector<string>& parameterFileArray
 ) {
     DataContainerBuilder* dataFactory = CudaDataContainerBuilder::getInstance();
@@ -65,5 +68,5 @@ StretchFreeAlgorithm* CudaComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
         throw logic_error(exceptionString.str());
     }
 
-    return new CudaStretchFreeAlgorithm(traveltime, context, dataFactory, parameterFileArray);
+    return new CudaStretchFreeAlgorithm(traveltime, context, dataFactory, threadCount, parameterFileArray);
 }

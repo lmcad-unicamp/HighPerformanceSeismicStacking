@@ -12,9 +12,10 @@ OpenCLDifferentialEvolutionAlgorithm::OpenCLDifferentialEvolutionAlgorithm(
     shared_ptr<Traveltime> model,
     shared_ptr<DeviceContext> context,
     DataContainerBuilder* dataBuilder,
+    unsigned int threadCount,
     unsigned int gen,
     unsigned int ind
-) : DifferentialEvolutionAlgorithm(model, context, dataBuilder, gen, ind), OpenCLComputeAlgorithm() {
+) : DifferentialEvolutionAlgorithm(model, context, dataBuilder, threadCount, gen, ind), OpenCLComputeAlgorithm() {
 }
 
 void OpenCLDifferentialEvolutionAlgorithm::compileKernels(const string& deviceKernelSourcePath) {
@@ -115,7 +116,7 @@ void OpenCLDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(floa
 }
 
 void OpenCLDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
-    LOGI("Selecting traces for m0 = " << m0);
+    LOGD("Selecting traces for m0 = " << m0);
 
     cl_int errorCode;
 

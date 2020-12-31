@@ -15,7 +15,8 @@ class OpenCLLinearSearchAlgorithm : public LinearSearchAlgorithm, public OpenCLC
         OpenCLLinearSearchAlgorithm(
             shared_ptr<Traveltime> traveltime,
             shared_ptr<DeviceContext> context,
-            DataContainerBuilder* dataBuilder
+            DataContainerBuilder* dataBuilder,
+            unsigned int threadCount
         );
 
         void compileKernels(const string& deviceKernelSourcePath) override;

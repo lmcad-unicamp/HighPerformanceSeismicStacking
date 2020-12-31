@@ -19,6 +19,7 @@ class OpenCLDifferentialEvolutionAlgorithm : public DifferentialEvolutionAlgorit
             shared_ptr<Traveltime> model,
             shared_ptr<DeviceContext> context,
             DataContainerBuilder* dataBuilder,
+            unsigned int threadCount,
             unsigned int gen,
             unsigned int ind
         );

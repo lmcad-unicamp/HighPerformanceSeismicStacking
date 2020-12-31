@@ -17,8 +17,9 @@ using namespace std;
 OpenCLLinearSearchAlgorithm::OpenCLLinearSearchAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
-    DataContainerBuilder* dataBuilder
-) : LinearSearchAlgorithm(traveltime, context, dataBuilder), OpenCLComputeAlgorithm() {
+    DataContainerBuilder* dataBuilder,
+    unsigned int threadCount
+) : LinearSearchAlgorithm(traveltime, context, dataBuilder, threadCount), OpenCLComputeAlgorithm() {
 }
 
 void OpenCLLinearSearchAlgorithm::compileKernels(const string& deviceKernelSourcePath) {
@@ -26,8 +27,6 @@ void OpenCLLinearSearchAlgorithm::compileKernels(const string& deviceKernelSourc
 }
 
 void OpenCLLinearSearchAlgorithm::computeSemblanceAtGpuForMidpoint(float m0) {
-
-    LOGI("Computing semblance for m0 = " << m0);
 
     if (!filteredTracesCount) {
         LOGI("No trace has been selected for m0 = " << m0 << ". Skipping.");
@@ -387,5 +386,5 @@ void OpenCLLinearSearchAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
     MEASURE_EXEC_TIME(copyTime, copyOnlySelectedTracesToDevice(usedTraceMask));
 
-    LOGI("Execution time for copying traces is " << copyTime.count() << "s");
+    LOGD("Execution time for copying traces is " << copyTime.count() << "s");
 }

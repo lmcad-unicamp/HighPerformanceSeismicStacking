@@ -13,7 +13,7 @@ int SpitzWorker::run(spits::istream& task, const spits::pusher& result) {
 
     float m0 = task.read_float();
 
-    LOGI("m0 = " << m0);
+    LOGI("Computing semblance for m0 = " << m0);
 
     if (!computeAlgorithm->isSetUp()) {
         computeAlgorithm->setUp();

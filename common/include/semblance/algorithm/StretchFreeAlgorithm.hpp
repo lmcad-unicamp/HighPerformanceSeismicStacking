@@ -23,6 +23,7 @@ class StretchFreeAlgorithm : public ComputeAlgorithm {
             shared_ptr<Traveltime> model,
             shared_ptr<DeviceContext> context,
             DataContainerBuilder* dataBuilder,
+            unsigned int threadCount,
             const vector<string>& files
         );
 

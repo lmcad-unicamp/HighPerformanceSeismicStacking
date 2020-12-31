@@ -1,5 +1,6 @@
 #include "common/include/parser/Parser.hpp"
 #include "common/include/model/Utils.hpp"
+#include "common/include/semblance/algorithm/ComputeAlgorithm.hpp"
 #include "common/include/traveltime/TraveltimeBuilder.hpp"
 
 #include <algorithm>
@@ -25,6 +26,7 @@ Parser::Parser() : arguments("Allowed options") {
         ("kernel-path", value<string>(), "OpenCL's kernel location.")
         ("output", value<string>()->required(), "*.su output data prefix.")
         ("tau", value<float>(), "Semblance processing window given by w = 2 * tau + 1.")
+        ("thread-count", value<unsigned int>()->default_value(DEFAULT_THREAD_COUNT), "GPU thread count.")
         ("traveltime", value<string>()->required(), "Traveltime traveltime to be used.")
         ("upper-bounds", value<vector<float>>()->required()->multitoken(), "Upper bounds for traveltime parameters.")
         ("v0", value<float>(), "Velocity used to compute ZO-CRS A parameter.")

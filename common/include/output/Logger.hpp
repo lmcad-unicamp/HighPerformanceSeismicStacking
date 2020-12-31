@@ -34,7 +34,6 @@ class Logger {
 #define _LOG(level, message) do { \
     if (level <= Logger::getInstance()->getVerbosity()) { \
         ostringstream _stringStream; \
-        _stringStream << "[" << __func__ << ":" << __LINE__ << "] "; \
         _stringStream << message; \
         Logger::print(level, _stringStream); \
     } \

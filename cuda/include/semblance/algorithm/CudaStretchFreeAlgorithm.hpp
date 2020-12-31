@@ -11,6 +11,7 @@ class CudaStretchFreeAlgorithm : public StretchFreeAlgorithm {
             shared_ptr<Traveltime> traveltime,
             shared_ptr<DeviceContext> context,
             DataContainerBuilder* dataBuilder,
+            unsigned int threadCount,
             const vector<string>& files
         );
 

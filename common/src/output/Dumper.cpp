@@ -27,7 +27,7 @@ Dumper::Dumper(const string& path, const string& dataFile, const string& compute
 }
 
 void Dumper::createDir() const {
-    LOGI("Creating output directory at " << outputDirectoryPath);
+    LOGD("Creating output directory at " << outputDirectoryPath);
 
     if (filesystem::exists(outputDirectoryPath)) {
         return;

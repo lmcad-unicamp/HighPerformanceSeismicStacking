@@ -63,8 +63,8 @@ Traveltime* TraveltimeBuilder::buildZeroOffsetCommonReflectionSurface(
     float upperBoundForA = 2.0f * sin(traveltime->getAinInRad()) / v0;
     float upperBoundForB = bPctg * 4 / (minVelocity  * minVelocity);
 
-    LOGI("Upper bound for A is " << upperBoundForA);
-    LOGI("Upper bound for B is " << upperBoundForB);
+    LOGD("Upper bound for A is " << upperBoundForA);
+    LOGD("Upper bound for B is " << upperBoundForB);
 
     traveltime->updateLowerBoundForParameter(1, -upperBoundForA);
     traveltime->updateUpperBoundForParameter(1, upperBoundForA);

@@ -16,12 +16,14 @@ class CudaComputeAlgorithmBuilder : public ComputeAlgorithmBuilder {
         LinearSearchAlgorithm* buildLinearSearchAlgorithm(
             shared_ptr<Traveltime> traveltime,
             shared_ptr<DeviceContext> context,
+            unsigned int threadCount,
             const vector<int>& discretizationArray
         ) override;
 
         DifferentialEvolutionAlgorithm* buildDifferentialEvolutionAlgorithm(
             shared_ptr<Traveltime> traveltime,
             shared_ptr<DeviceContext> context,
+            unsigned int threadCount,
             unsigned int generation,
             unsigned int individualsPerPopulation
         ) override;
@@ -29,6 +31,7 @@ class CudaComputeAlgorithmBuilder : public ComputeAlgorithmBuilder {
         StretchFreeAlgorithm* buildStretchFreeAlgorithm(
             shared_ptr<Traveltime> traveltime,
             shared_ptr<DeviceContext> context,
+            unsigned int threadCount,
             const vector<string>& parameterFileArray
         ) override;
 };

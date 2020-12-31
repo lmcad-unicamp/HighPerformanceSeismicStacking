@@ -14,7 +14,9 @@ class DifferentialEvolutionAlgorithm : public ComputeAlgorithm {
             shared_ptr<Traveltime> model,
             shared_ptr<DeviceContext> context,
             DataContainerBuilder* dataBuilder,
-            unsigned int gen, unsigned int ind
+            unsigned int threadCount,
+            unsigned int gen,
+            unsigned int ind
         );
 
         void computeSemblanceAndParametersForMidpoint(float m0) override;

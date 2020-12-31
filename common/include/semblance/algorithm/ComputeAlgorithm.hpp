@@ -13,6 +13,8 @@
 
 using namespace std;
 
+#define DEFAULT_THREAD_COUNT 64
+
 enum class GatherData {
     MDPNT,
     HLFOFFST,
@@ -36,7 +38,7 @@ class ComputeAlgorithm {
 
         shared_ptr<Traveltime> traveltime;
 
-        unsigned int threadCount, threadCountToRestore;
+        unsigned int threadCount;
 
         //
         // Data for a single m0.
@@ -61,7 +63,8 @@ class ComputeAlgorithm {
             const string& name,
             shared_ptr<Traveltime> model,
             shared_ptr<DeviceContext> context,
-            DataContainerBuilder* dataBuilder
+            DataContainerBuilder* dataBuilder,
+            unsigned int threadCount = DEFAULT_THREAD_COUNT
         );
 
         virtual ~ComputeAlgorithm();

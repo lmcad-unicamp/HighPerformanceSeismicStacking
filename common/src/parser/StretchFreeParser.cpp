@@ -23,7 +23,10 @@ ComputeAlgorithm* StretchFreeParser::parseComputeAlgorithm(
                 LOGI(nonStretchFreeParameterFiles.size());
     }
 
-    ComputeAlgorithm* algorithm = builder->buildStretchFreeAlgorithm(traveltime, deviceContext, nonStretchFreeParameterFiles);
+    unsigned int threadCount = argumentMap["thread-count"].as<unsigned int>();
+
+    ComputeAlgorithm* algorithm = builder->buildStretchFreeAlgorithm(
+        traveltime, deviceContext, threadCount, nonStretchFreeParameterFiles);
 
     if (argumentMap.count("kernel-path")) {
         algorithm->compileKernels(argumentMap["kernel-path"].as<string>());

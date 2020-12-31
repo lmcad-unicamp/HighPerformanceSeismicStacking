@@ -21,11 +21,11 @@ void SpitzFactoryAdapter::initialize(int argc, const char *argv[]) {
     }
 
     if (traveltime == nullptr) {
-        LOGI("Initializing traveltime");
+        LOGD("Initializing traveltime");
         traveltime.reset(parser->parseTraveltime());
     }
 
-    LOGI("Factory initialized");
+    LOGD("Factory initialized");
 }
 
 spits::job_manager *SpitzFactoryAdapter::create_job_manager(

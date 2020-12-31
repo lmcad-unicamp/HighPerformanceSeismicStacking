@@ -11,6 +11,7 @@ class OpenCLStretchFreeAlgorithm : public StretchFreeAlgorithm, public OpenCLCom
             shared_ptr<Traveltime> traveltime,
             shared_ptr<DeviceContext> context,
             DataContainerBuilder* dataBuilder,
+            unsigned int threadCount,
             const vector<string>& files
         );
 

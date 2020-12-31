@@ -21,6 +21,7 @@ ComputeAlgorithmBuilder* OpenCLComputeAlgorithmBuilder::getInstance() {
 LinearSearchAlgorithm* OpenCLComputeAlgorithmBuilder::buildLinearSearchAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
+    unsigned int threadCount,
     const vector<int>& discretizationArray
 ) {
     if (discretizationArray.size() != traveltime->getNumberOfParameters()) {
@@ -32,7 +33,7 @@ LinearSearchAlgorithm* OpenCLComputeAlgorithmBuilder::buildLinearSearchAlgorithm
 
     DataContainerBuilder* dataFactory = OpenCLDataContainerBuilder::getInstance();
 
-    LinearSearchAlgorithm* computeAlgorithm = new OpenCLLinearSearchAlgorithm(traveltime, context, dataFactory);
+    LinearSearchAlgorithm* computeAlgorithm = new OpenCLLinearSearchAlgorithm(traveltime, context, dataFactory, threadCount);
 
     for (unsigned int i = 0; i < traveltime->getNumberOfParameters(); i++) {
         computeAlgorithm->setDiscretizationGranularityForParameter(i, discretizationArray[i]);
@@ -44,17 +45,19 @@ LinearSearchAlgorithm* OpenCLComputeAlgorithmBuilder::buildLinearSearchAlgorithm
 DifferentialEvolutionAlgorithm* OpenCLComputeAlgorithmBuilder::buildDifferentialEvolutionAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
+    unsigned int threadCount,
     unsigned int generation,
     unsigned int individualsPerPopulation
 ) {
     DataContainerBuilder* dataFactory = OpenCLDataContainerBuilder::getInstance();
 
-    return new OpenCLDifferentialEvolutionAlgorithm(traveltime, context, dataFactory, generation, individualsPerPopulation);
+    return new OpenCLDifferentialEvolutionAlgorithm(traveltime, context, dataFactory, threadCount, generation, individualsPerPopulation);
 }
 
 StretchFreeAlgorithm* OpenCLComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
     shared_ptr<Traveltime> traveltime,
     shared_ptr<DeviceContext> context,
+    unsigned int threadCount,
     const vector<string>& parameterFileArray
 ) {
     DataContainerBuilder* dataFactory = OpenCLDataContainerBuilder::getInstance();
@@ -66,5 +69,5 @@ StretchFreeAlgorithm* OpenCLComputeAlgorithmBuilder::buildStretchFreeAlgorithm(
         throw logic_error(exceptionString.str());
     }
 
-    return new OpenCLStretchFreeAlgorithm(traveltime, context, dataFactory, parameterFileArray);
+    return new OpenCLStretchFreeAlgorithm(traveltime, context, dataFactory, threadCount, parameterFileArray);
 }

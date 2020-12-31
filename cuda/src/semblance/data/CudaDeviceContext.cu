@@ -12,6 +12,6 @@ CudaDeviceContext::CudaDeviceContext(unsigned int devId) : DeviceContext(devId) 
 }
 
 void CudaDeviceContext::activate() const {
-    LOGI("Activating GPU#" << deviceId);
+    LOGH("Activating GPU#" << deviceId);
     CUDA_ASSERT(cudaSetDevice(static_cast<int>(deviceId)));
 }

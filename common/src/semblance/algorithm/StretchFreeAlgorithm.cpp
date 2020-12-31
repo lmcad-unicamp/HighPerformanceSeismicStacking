@@ -1,5 +1,6 @@
 #include "common/include/execution/Utils.hpp"
 #include "common/include/model/Trace.hpp"
+#include "common/include/output/Logger.hpp"
 #include "common/include/semblance/algorithm/StretchFreeAlgorithm.hpp"
 
 #include <fstream>
@@ -13,12 +14,15 @@ StretchFreeAlgorithm::StretchFreeAlgorithm(
     shared_ptr<Traveltime> model,
     shared_ptr<DeviceContext> context,
     DataContainerBuilder* dataBuilder,
+    unsigned int threadCount,
     const vector<string>& files
-) : ComputeAlgorithm("strecth-free", model, context, dataBuilder),
+) : ComputeAlgorithm("strecth-free", model, context, dataBuilder, threadCount),
     parameterFileArray(files) {
 }
 
 void StretchFreeAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
+    LOGI("Computing semblance for m0 = " << m0);
+
     Gather* gather = Gather::getInstance();
 
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();

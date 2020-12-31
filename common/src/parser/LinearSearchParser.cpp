@@ -23,9 +23,12 @@ ComputeAlgorithm* LinearSearchParser::parseComputeAlgorithm(
         discretizationGranularity = argumentMap["granularity"].as<vector<int>>();
     }
 
-    LOGI("Received " << discretizationGranularity.size() << " granularities.");
+    unsigned int threadCount = argumentMap["thread-count"].as<unsigned int>();
 
-    ComputeAlgorithm* algorithm = builder->buildLinearSearchAlgorithm(traveltime, deviceContext, discretizationGranularity);
+    LOGD("Received " << discretizationGranularity.size() << " granularities.");
+
+    ComputeAlgorithm* algorithm = builder->buildLinearSearchAlgorithm(
+        traveltime, deviceContext, threadCount, discretizationGranularity);
 
     if (argumentMap.count("kernel-path")) {
         algorithm->compileKernels(argumentMap["kernel-path"].as<string>());

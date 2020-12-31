@@ -24,7 +24,7 @@ spits::worker *SpitzFactory::create_worker(
 
     initialize(argc, argv);
 
-    LOGI("Device count is " << deviceCount);
+    LOGD("Device count is " << deviceCount);
 
     shared_ptr<DeviceContext> deviceContext(deviceBuilder->build(deviceCount++));
 

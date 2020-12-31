@@ -15,14 +15,17 @@ using namespace std;
 LinearSearchAlgorithm::LinearSearchAlgorithm(
     shared_ptr<Traveltime> model,
     shared_ptr<DeviceContext> context,
-    DataContainerBuilder* dataBuilder
-) : ComputeAlgorithm("linear-search", model, context, dataBuilder),
+    DataContainerBuilder* dataBuilder,
+    unsigned int threadCount
+) : ComputeAlgorithm("linear-search", model, context, dataBuilder, threadCount),
     discretizationGranularity(model->getNumberOfParameters()),
     discretizationDivisor(model->getNumberOfParameters()),
     discretizationStep(model->getNumberOfParameters()) {
 }
 
 void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
+    LOGI("Computing semblance for m0 = " << m0);
+
     Gather* gather = Gather::getInstance();
 
     unsigned int numberOfSamplesPerTrace = gather->getSamplesPerTrace();
@@ -40,7 +43,7 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
 
-    LOGI("totalNumberOfParameters = " << totalNumberOfParameters);
+    LOGD("totalNumberOfParameters = " << totalNumberOfParameters);
 
     MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
 
@@ -98,7 +101,7 @@ void LinearSearchAlgorithm::setUp() {
 
     MEASURE_EXEC_TIME(initalizationExecutionTime, initializeParameters());
 
-    LOGI("initalizationExecutionTime = " << initalizationExecutionTime.count() << "s");
+    LOGD("initalizationExecutionTime = " << initalizationExecutionTime.count() << "s");
 
     isSet = true;
 }

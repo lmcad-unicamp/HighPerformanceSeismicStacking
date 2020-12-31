@@ -17,21 +17,24 @@ ComputeAlgorithm* DifferentialEvolutionParser::parseComputeAlgorithm(
     shared_ptr<DeviceContext> deviceContext,
     shared_ptr<Traveltime> traveltime
 ) const {
-    unsigned int generations, individualsPerPopulation;
+    unsigned int threadCount, generations, individualsPerPopulation;
 
     if (!argumentMap.count("generations") || !argumentMap.count("population-size")) {
         throw logic_error("Missing parameters for differential evolution.");
     }
 
+    threadCount = argumentMap["thread-count"].as<unsigned int>();
+
     generations = argumentMap["generations"].as<unsigned int>();
 
-    LOGI("Generations = " << generations);
+    LOGD("Generations = " << generations);
 
     individualsPerPopulation = argumentMap["population-size"].as<unsigned int>();
 
-    LOGI("Individuals per population = " << individualsPerPopulation);
+    LOGD("Individuals per population = " << individualsPerPopulation);
 
-    ComputeAlgorithm* algorithm = builder->buildDifferentialEvolutionAlgorithm(traveltime, deviceContext, generations, individualsPerPopulation);
+    ComputeAlgorithm* algorithm = builder->buildDifferentialEvolutionAlgorithm(
+        traveltime, deviceContext, threadCount, generations, individualsPerPopulation);
 
     if (argumentMap.count("kernel-path")) {
         algorithm->compileKernels(argumentMap["kernel-path"].as<string>());

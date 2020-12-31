@@ -10,7 +10,8 @@ class CudaLinearSearchAlgorithm : public LinearSearchAlgorithm {
         CudaLinearSearchAlgorithm(
             shared_ptr<Traveltime> traveltime,
             shared_ptr<DeviceContext> context,
-            DataContainerBuilder* dataBuilder
+            DataContainerBuilder* dataBuilder,
+            unsigned int threadCount
         );
 
         void computeSemblanceAtGpuForMidpoint(float m0) override;

@@ -10,14 +10,17 @@ DifferentialEvolutionAlgorithm::DifferentialEvolutionAlgorithm(
     shared_ptr<Traveltime> model,
     shared_ptr<DeviceContext> context,
     DataContainerBuilder* dataBuilder,
+    unsigned int threadCount,
     unsigned int gen,
     unsigned int ind
-) : ComputeAlgorithm("de", model, context, dataBuilder),
+) : ComputeAlgorithm("de", model, context, dataBuilder, threadCount),
     generations(gen),
     individualsPerPopulation(ind) {
 }
 
 void DifferentialEvolutionAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
+    LOGI("Computing semblance for m0 = " << m0);
+
     Gather* gather = Gather::getInstance();
 
     unsigned int numberOfSamplesPerTrace = gather->getSamplesPerTrace();

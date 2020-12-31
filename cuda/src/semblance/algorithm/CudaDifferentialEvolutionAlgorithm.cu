@@ -22,9 +22,10 @@ CudaDifferentialEvolutionAlgorithm::CudaDifferentialEvolutionAlgorithm(
     shared_ptr<Traveltime> model,
     shared_ptr<DeviceContext> context,
     DataContainerBuilder* dataBuilder,
+    unsigned int threadCount,
     unsigned int gen,
     unsigned int ind
-) : DifferentialEvolutionAlgorithm(model, context, dataBuilder, gen, ind) {
+) : DifferentialEvolutionAlgorithm(model, context, dataBuilder, threadCount, gen, ind) {
 }
 
 CudaDifferentialEvolutionAlgorithm::~CudaDifferentialEvolutionAlgorithm() {
@@ -41,7 +42,7 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
     float dtInSeconds = gather->getSamplePeriodInSeconds();
     int tauIndexDisplacement = gather->getTauIndexDisplacement();
     unsigned int windowSize = gather->getWindowSize();
-    float apm = gather->getApm();    
+    float apm = gather->getApm();
     float h0 = traveltime->getReferenceHalfoffset();
 
     dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(individualsPerPopulation * samplesPerTrace) / static_cast<float>(threadCount))));
@@ -110,7 +111,7 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
 
 void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m0) {
 
-    LOGI("Selecting traces for m0 = " << m0);
+    LOGD("Selecting traces for m0 = " << m0);
 
     Gather* gather = Gather::getInstance();
 
@@ -120,7 +121,7 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
     float dtInSeconds = gather->getSamplePeriodInSeconds();
     int tauIndexDisplacement = gather->getTauIndexDisplacement();
     unsigned int windowSize = gather->getWindowSize();
-    float apm = gather->getApm();    
+    float apm = gather->getApm();
     float h0 = traveltime->getReferenceHalfoffset();
 
     vector<unsigned char> usedTraceMask(traceCount);
@@ -178,7 +179,7 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
 
     MEASURE_EXEC_TIME(copyTime, copyOnlySelectedTracesToDevice(usedTraceMask));
 
-    LOGI("Execution time for copying traces is " << copyTime.count() << "s");
+    LOGD("Execution time for copying traces is " << copyTime.count() << "s");
 }
 
 void CudaDifferentialEvolutionAlgorithm::setupRandomSeedArray() {

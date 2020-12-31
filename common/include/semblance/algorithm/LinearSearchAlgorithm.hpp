@@ -12,8 +12,6 @@ class LinearSearchAlgorithm : public ComputeAlgorithm {
 
         vector<float> discretizationStep;
 
-        unsigned int threadCountToRestore;
-
         void setupArrays();
 
         void setupDiscretizationSteps();
@@ -22,7 +20,8 @@ class LinearSearchAlgorithm : public ComputeAlgorithm {
         LinearSearchAlgorithm(
             shared_ptr<Traveltime> model,
             shared_ptr<DeviceContext> context,
-            DataContainerBuilder* dataBuilder
+            DataContainerBuilder* dataBuilder,
+            unsigned int threadCount
         );
 
         void computeSemblanceAndParametersForMidpoint(float m0) override;
