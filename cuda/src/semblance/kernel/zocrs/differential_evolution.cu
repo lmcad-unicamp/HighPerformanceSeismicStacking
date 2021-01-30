@@ -6,6 +6,7 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
     const float *samples,
     const float *midpoint,
     const float *halfoffsetSquared,
+    unsigned int startingTraceIndex,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     unsigned int individualsPerPopulation,
@@ -43,9 +44,11 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
         unsigned int usedCount = 0;
 
         for (unsigned int traceIndex = 0; traceIndex < traceCount; traceIndex++) {
-            float m = midpoint[traceIndex];
-            float h_sq = halfoffsetSquared[traceIndex];
-            const float *traceSamples = samples + traceIndex * samplesPerTrace;
+            unsigned int traceIndexWithOffset = startingTraceIndex + traceIndex;
+
+            float m = midpoint[traceIndexWithOffset];
+            float h_sq = halfoffsetSquared[traceIndexWithOffset];
+            const float *traceSamples = samples + traceIndexWithOffset * samplesPerTrace;
 
             float dm = m - m0;
             float tmp = t0 + a * dm;
