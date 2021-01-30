@@ -123,7 +123,8 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         dumper.createDir();
 
-        parser->readGather();
+        chrono::duration<double> totalReadTime = chrono::duration<double>::zero();
+        MEASURE_EXEC_TIME(totalReadTime, parser->readGather());
 
         for (auto it : gather->getCdps()) {
             midpointQueue.push(it.first);
@@ -157,6 +158,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
 
+        LOGI("Read time is " << totalReadTime.count() << " s")
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
         LOGI("It took " << totalExecutionTime.count() << "s to compute.");
 
