@@ -1,0 +1,45 @@
+@startuml DeviceContext
+DeviceContextBuilder <|-- CudaDeviceContextBuilder
+DeviceContextBuilder <|-- OpenCLDeviceContextBuilder
+
+CudaDeviceContext <. CudaDeviceContextBuilder : builds
+OpenCLDeviceContext <. OpenCLDeviceContextBuilder : builds
+
+DeviceContext <|-- CudaDeviceContext
+DeviceContext <|-- OpenCLDeviceContext
+
+abstract class DeviceContext {
+    #unsigned int deviceId
+    +DeviceContext(deviceId)
+    {abstract} +activate()
+}
+
+class CudaDeviceContext {
+    +activate()
+}
+
+class OpenCLDeviceContext {
+    -unique_ptr<cl::Context> context
+    -unique_ptr<cl::CommandQueue> commandQueue
+    +getContext()
+    +getCommandQueue()
+    +activate()
+}
+
+interface DeviceContextBuilder {
+    {abstract} +DeviceContext* build(unsigned int devId)
+}
+
+class CudaDeviceContextBuilder {
+    {static} #unique_ptr<DeviceContextBuilder> instance;
+    +DeviceContext* build(unsigned int devId)
+    +DeviceContextBuilder* getInstance()
+}
+
+class OpenCLDeviceContextBuilder {
+    {static} #unique_ptr<DeviceContextBuilder> instance;
+    +DeviceContext* build(unsigned int devId)
+    +DeviceContextBuilder* getInstance()
+}
+
+@enduml

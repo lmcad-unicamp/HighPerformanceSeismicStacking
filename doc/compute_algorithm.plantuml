@@ -1,0 +1,98 @@
+@startuml ComputeAlgorithm
+' skinparam linetype ortho
+
+ComputeAlgorithm <|-- LinearSearchAlgorithm
+ComputeAlgorithm <|---- DifferentialEvolutionAlgorithm
+ComputeAlgorithm <|-- StretchFreeAlgorithm
+
+LinearSearchAlgorithm <|-- CudaLinearSearchAlgorithm
+DifferentialEvolutionAlgorithm <|-- CudaDifferentialEvolutionAlgorithm
+StretchFreeAlgorithm <|-- CudaStretchFreeAlgorithm
+
+LinearSearchAlgorithm <|-- OpenCLLinearSearchAlgorithm
+DifferentialEvolutionAlgorithm <|-- OpenCLDifferentialEvolutionAlgorithm
+StretchFreeAlgorithm <|-- OpenCLStretchFreeAlgorithm
+
+' OpenCLComputeAlgorithm <|- OpenCLLinearSearchAlgorithm
+' OpenCLComputeAlgorithm <|- OpenCLDifferentialEvolutionAlgorithm
+' OpenCLComputeAlgorithm <|- OpenCLStretchFreeAlgorithm
+
+abstract class ComputeAlgorithm {
+    # DataContainerBuilder* dataFactory
+    # unique_ptr<DataContainer> deviceParameterArray
+    # unique_ptr<DataContainer> deviceResultArray
+    # unique_ptr<DataContainer> deviceNotUsedCountArray
+    # unordered_map<StatisticResult, float> computedStatisticalResults
+    + {abstract} computeSemblanceAndParametersForMidpoint(float m0)
+    + {abstract} void computeSemblanceAtGpuForMidpoint(float m0)
+    + {abstract} void selectTracesToBeUsedForMidpoint(float m0)
+    + {abstract} setUp()
+}
+
+abstract class LinearSearchAlgorithm {
+    + {abstract} initializeParameters()
+    + computeSemblanceAndParametersForMidpoint(float m0)
+    + setUp()
+}
+
+abstract class DifferentialEvolutionAlgorithm {
+    + {abstract} setupRandomSeedArray()
+    + {abstract} startAllPopulations()
+    + {abstract} mutateAllPopulations()
+    + {abstract} crossoverPopulationIndividuals()
+    + {abstract} advanceGeneration()
+    + {abstract} selectBestIndividuals(vector<float>& resultArrays)
+    + computeSemblanceAndParametersForMidpoint(float m0)
+    + setUp()
+}
+
+abstract class StretchFreeAlgorithm {
+    + computeSemblanceAndParametersForMidpoint(float m0)
+    + setUp()
+    + readNonStretchedFreeParameterFromFile()
+}
+
+class CudaLinearSearchAlgorithm {
+    + computeSemblanceAtGpuForMidpoint(float m0)
+    + selectTracesToBeUsedForMidpoint(float m0)
+    + initializeParameters()
+}
+
+class OpenCLLinearSearchAlgorithm {
+    + computeSemblanceAtGpuForMidpoint(float m0)
+    + selectTracesToBeUsedForMidpoint(float m0)
+    + initializeParameters()
+}
+
+class CudaDifferentialEvolutionAlgorithm {
+    + computeSemblanceAtGpuForMidpoint(float m0)
+    + selectTracesToBeUsedForMidpoint(float m0)
+    + setupRandomSeedArray()
+    + startAllPopulations()
+    + mutateAllPopulations()
+    + crossoverPopulationIndividuals()
+    + advanceGeneration()
+    + selectBestIndividuals(vector<float>& resultArrays)
+}
+
+class OpenCLDifferentialEvolutionAlgorithm {
+    + computeSemblanceAtGpuForMidpoint(float m0)
+    + selectTracesToBeUsedForMidpoint(float m0)
+    + setupRandomSeedArray()
+    + startAllPopulations()
+    + mutateAllPopulations()
+    + crossoverPopulationIndividuals()
+    + advanceGeneration()
+    + selectBestIndividuals(vector<float>& resultArrays)
+}
+
+class CudaStretchFreeAlgorithm {
+    + computeSemblanceAtGpuForMidpoint(float m0)
+    + selectTracesToBeUsedForMidpoint(float m0)
+}
+
+class OpenCLStretchFreeAlgorithm {
+    + computeSemblanceAtGpuForMidpoint(float m0)
+    + selectTracesToBeUsedForMidpoint(float m0)
+}
+@enduml

@@ -1,0 +1,32 @@
+@startuml Parser
+Parser <|-- LinearSearchParser
+Parser <|-- DifferentialEvolutionParser
+Parser <|-- StretchFreeParser
+
+abstract class Parser {
+    #argumentDescription
+    #argumentMap
+    __
+    +parseArguments(int argc, const char *argv[])
+    +parseTraveltime()
+    +readGather()
+    .. Abstract methods ..
+    {abstract} +parseComputeAlgorithm()
+    {abstract} +getParserType()
+}
+
+class LinearSearchParser {
+    +parseComputeAlgorithm()
+    +getParserType()
+}
+
+class DifferentialEvolutionParser {
+    +parseComputeAlgorithm()
+    +getParserType()
+}
+
+class StretchFreeParser {
+    +parseComputeAlgorithm()
+    +getParserType()
+}
+@enduml

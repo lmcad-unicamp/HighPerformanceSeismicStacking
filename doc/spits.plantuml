@@ -1,0 +1,64 @@
+@startuml Spits
+
+spits::committer <|--- SpitzCommitter
+spits::job_manager <|--- SpitzJobManager
+spits::worker <|-- SpitzWorker
+
+spits::factory <|-- SpitzFactoryAdapter
+SpitzFactoryAdapter <|-- SpitzFactory
+
+spits::committer <.. SpitzFactoryAdapter : builds
+spits::worker <.. SpitzFactory : builds
+spits::job_manager <.. SpitzFactoryAdapter : builds
+
+interface spits::committer {
+    +{abstract} int commit_task(spits::istream& result)
+    +{abstract} int commit_job(const spits::pusher& final_result)
+}
+
+class SpitzCommitter {
+    -shared_ptr<Traveltime> traveltime;
+    -Dumper dumper;
+    -unique_ptr<ResultSet> resultSet;
+    +int commit_task(spits::istream& result)
+    +int commit_job(const spits::pusher& final_result)
+}
+
+interface spits::job_manager {
+    +{abstract} bool next_task(const spits::pusher& task)
+}
+
+class SpitzJobManager {
+    -map<float, Cdp>::const_iterator cdpIterator
+    -mutex iteratorMutex
+    +bool next_task(const spits::pusher& task)
+}
+
+interface spits::worker {
+    +{abstract}int run(spits::istream& task, const spits::pusher& result
+}
+
+class SpitzWorker {
+    -spits::metrics& metrics
+    -unique_ptr<ComputeAlgorithm> computeAlgorithm
+    +int run(spits::istream& task, const spits::pusher& result)
+}
+
+interface spits::factory {
+    +{abstract} spits::job_manager* create_job_manager()
+    +{abstract} spits::committer* create_committer()
+    +{abstract} spits::worker* create_worker()
+}
+
+class SpitzFactoryAdapter {
+    +spits::job_manager* create_job_manager()
+    +spits::committer* create_committer()
+    +spits::worker* create_worker()
+    +initialize(int argc, const char *argv[])
+}
+
+class SpitzFactory {
+    +spits::worker* create_worker()
+}
+
+@enduml

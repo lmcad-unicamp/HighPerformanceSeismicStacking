@@ -1,0 +1,60 @@
+@startuml DataContainer
+DataContainerBuilder <|-- CudaDataContainerBuilder
+DataContainerBuilder <|-- OpenCLDataContainerBuilder
+
+CudaDataContainer <... CudaDataContainerBuilder : builds
+OpenCLDataContainer <... OpenCLDataContainerBuilder : builds
+
+DataContainer <|-- CudaDataContainer
+DataContainer <|-- OpenCLDataContainer
+
+abstract class DataContainer {
+    #unsigned int deviceId
+    +DataContainer(deviceId)
+    + unsigned int getElementCount()
+    + void reallocate(unsigned int newElementCount)
+    + {abstract} void allocate()
+    + {abstract} void deallocate()
+    + {abstract} void copyFrom(const vector<float>& sourceArray)
+    + {abstract} void copyFromWithOffset(const vector<float>& sourceArray, unsigned int offset)
+    + {abstract} void pasteTo(vector<float>& targetArray)
+    + {abstract} void reset()
+}
+
+class CudaDataContainer {
+    - float* cudaAddress
+    + void allocate()
+    + void deallocate()
+    + void copyFrom(const vector<float>& sourceArray)
+    + void copyFromWithOffset(const vector<float>& sourceArray, unsigned int offset)
+    + void pasteTo(vector<float>& targetArray)
+    + void reset()
+}
+
+class OpenCLDataContainer {
+    - unique_ptr<cl::Buffer> openClBuffer
+    + void allocate()
+    + void deallocate()
+    + void copyFrom(const vector<float>& sourceArray)
+    + void copyFromWithOffset(const vector<float>& sourceArray, unsigned int offset)
+    + void pasteTo(vector<float>& targetArray)
+    + void reset()
+}
+
+interface DataContainerBuilder {
+    {abstract} +DataContainer* build(shared_ptr<DeviceContext> deviceContext)
+}
+
+class CudaDataContainerBuilder {
+    {static} #unique_ptr<DataContainerBuilder> instance;
+    +DataContainer* build(shared_ptr<DeviceContext> deviceContext)
+    +DataContainerBuilder* getInstance()
+}
+
+class OpenCLDataContainerBuilder {
+    {static} #unique_ptr<DataContainerBuilder> instance;
+    +DataContainer* build(shared_ptr<DeviceContext> deviceContext)
+    +DataContainerBuilder* getInstance()
+}
+
+@enduml
