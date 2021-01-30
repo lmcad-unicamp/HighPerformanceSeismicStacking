@@ -134,6 +134,8 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
             threads[deviceId].join();
         }
 
+        chrono::steady_clock::time_point dumpResultStartTime = chrono::steady_clock::now();
+
         dumper.dumpGatherParameters(parser->getInputFilePath());
 
         dumper.dumpTraveltime(traveltime.get());
@@ -150,9 +152,12 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
             LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
         }
 
+        chrono::duration<double> totalDumpTime = std::chrono::steady_clock::now() - dumpResultStartTime;
+
         chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
 
-        LOGI("Read time is " << totalReadTime.count() << " s")
+        LOGI("Read time is " << totalReadTime.count() << " s");
+        LOGI("Dump time is " << totalDumpTime.count() << " s");
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
         LOGI("It took " << totalExecutionTime.count() << "s to compute.");
 
