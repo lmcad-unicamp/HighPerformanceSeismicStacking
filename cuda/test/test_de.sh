@@ -1,15 +1,16 @@
 #! /bin/bash
 
-TEST_ID="6c3823e8"
+TEST_ID="0447d1c"
+GPU="gtxtitan"
 
 CUDA_ROOT=$(dirname ${PWD})
 PROJECT_ROOT=$(dirname ${CUDA_ROOT})
 
 FRAMEWORK="cuda"
 
-DATA_DIR="/home/ubuntu/nfs/data"
+DATA_DIR="${PROJECT_ROOT}/data"
 BIN_DIR="${CUDA_ROOT}/bin"
-TEST_DIR="/home/ubuntu/nfs/out/${TEST_ID}"
+TEST_DIR="${PROJECT_ROOT}/out/${TEST_ID}_${GPU}"
 
 GENERATIONS="32"
 POPULATION_SIZE="32"
@@ -17,8 +18,9 @@ POPULATION_SIZE="32"
 function de_common_mid_point {
     DATA_NAME=${1}
     AZIMUTH=${2}
+    TEST_INDEX=${3}
 
-    TEST_OUTPUT_DIR="${TEST_DIR}/cmp/de/${FRAMEWORK}/${DATA_NAME}"
+    TEST_OUTPUT_DIR="${TEST_DIR}/cmp/de/${FRAMEWORK}/${DATA_NAME}_${TEST_INDEX}"
 
     mkdir -p ${TEST_OUTPUT_DIR}
 
@@ -36,8 +38,10 @@ function de_common_mid_point {
 function de_zero_offset_reflection_surface {
     DATA_NAME=${1}
     AZIMUTH=${2}
+    TEST_INDEX=${3}
+    THREAD_COUNT=${4}
 
-    TEST_OUTPUT_DIR="${TEST_DIR}/zocrs/de/${FRAMEWORK}/${DATA_NAME}"
+    TEST_OUTPUT_DIR="${TEST_DIR}/zocrs/de/${FRAMEWORK}/${DATA_NAME}_${THREAD_COUNT}_${TEST_INDEX}"
 
     mkdir -p ${TEST_OUTPUT_DIR}
 
@@ -49,14 +53,16 @@ function de_zero_offset_reflection_surface {
         --lower-bounds 450 --upper-bounds 6000 \
         --generations ${GENERATIONS} --population-size ${POPULATION_SIZE} \
         --traveltime zocrs --ain 60 --v0 2000 --bpctg 0.1 \
+        --thread-count ${THREAD_COUNT} \
         --verbose 1 | tee ${TEST_OUTPUT_DIR}/output.log)
 }
 
 function de_offset_continuation_trajectory {
     DATA_NAME=${1}
     AZIMUTH=${2}
+    TEST_INDEX=${3}
 
-    TEST_OUTPUT_DIR="${TEST_DIR}/oct/de/${FRAMEWORK}/${DATA_NAME}"
+    TEST_OUTPUT_DIR="${TEST_DIR}/oct/de/${FRAMEWORK}/${DATA_NAME}_${TEST_INDEX}"
 
     mkdir -p ${TEST_OUTPUT_DIR}
 
@@ -72,16 +78,31 @@ function de_offset_continuation_trajectory {
 }
 
 #### Common Mid Point
-
-de_common_mid_point "fold2000" "90"
-de_common_mid_point "simple-synthetic" "0"
+# for i in `seq 1 10`;
+# do
+#     echo "Executing ${i}th iteration - CMP"
+#     de_common_mid_point "fold2000" "90" ${i}
+#     de_common_mid_point "simple-synthetic" "0" ${i}
+# done
 
 #### Zero Offset Common Reflection Point
+THREAD_COUNTS=(32 64 128 256 512 1024)
 
-de_zero_offset_reflection_surface "fold2000" "90"
-de_zero_offset_reflection_surface "simple-synthetic" "0"
+for THREAD_COUNT in ${THREAD_COUNTS[@]}; do
+    for i in `seq 1 1`;
+    do
+        echo "Executing ${i}th iteration - ZOCRS"
+        de_zero_offset_reflection_surface "fold2000" "90" ${i} ${THREAD_COUNT}
+        de_zero_offset_reflection_surface "simple-synthetic" "0" ${i} ${THREAD_COUNT}
+    done
+done
 
 #### Offset Continuation Trajectory
 
-de_offset_continuation_trajectory "fold2000" "90"
-de_offset_continuation_trajectory "simple-synthetic" "0"
+# for i in `seq 1 10`;
+# do
+#     echo "Executing ${i}th iteration - OCT"
+#     de_offset_continuation_trajectory "fold2000" "90" ${i}
+#     de_offset_continuation_trajectory "simple-synthetic" "0" ${i}
+# done
+

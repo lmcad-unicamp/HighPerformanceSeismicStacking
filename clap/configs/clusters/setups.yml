@@ -26,6 +26,14 @@ setups:
         workdir: "{{ project_root }}"
         ansible_python_interpreter: /usr/bin/python3
 
+    - type: action
+      name: run-command
+      group: commands-common
+      extra:
+        cmd: "git checkout {{ commit_id }}"
+        workdir: "{{ project_root }}"
+        ansible_python_interpreter: /usr/bin/python3
+
   ##
   ## BEGIN EFS setup section.
   ##
@@ -73,14 +81,6 @@ setups:
       name: run-command
       group: commands-common
       extra:
-        cmd: "mkdir -p {{ test_dir }}/jobmanager"
-        workdir: "{{ nfs_mount_point }}"
-        ansible_python_interpreter: /usr/bin/python3
-
-    - type: action
-      name: run-command
-      group: commands-common
-      extra:
         cmd: "make clean"
         workdir: "{{ project_root }}/common"
         ansible_python_interpreter: /usr/bin/python3
@@ -103,7 +103,6 @@ setups:
   ##    compute_capability: specific for cuda.
   ##    framework: either cuda or opencl.
   ##    project_root: project's root folder.
-  ##    test_dir: output data folder.
   ##
 
   setup-spits-taskmanager:
@@ -117,14 +116,6 @@ setups:
     - name: commands-common
 
     actions:
-    - type: action
-      name: run-command
-      group: commands-common
-      extra:
-        cmd: "mkdir -p {{ test_dir }}/taskmanager"
-        workdir: "{{ nfs_mount_point }}"
-        ansible_python_interpreter: /usr/bin/python3
-
     - type: action
       name: run-command
       group: commands-common

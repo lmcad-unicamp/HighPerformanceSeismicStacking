@@ -5,6 +5,13 @@ spits-job-manager-instance-aws:
   image_id: ami-0ae6362c56f7c361e
   security_group: spits-inbound-security-group
 
+spits-worker-instance-aws-g4dn.xlarge:
+  provider: aws-east-1-config
+  login: ubuntu-linux-login
+  flavor: g4dn.xlarge
+  image_id: ami-0ae6362c56f7c361e
+  security_group: spits-inbound-security-group
+
 spits-worker-instance-aws-g4dn.12xlarge:
   provider: aws-east-1-config
   login: ubuntu-linux-login
@@ -19,10 +26,31 @@ spits-worker-instance-aws-t2.medium:
   image_id: ami-0ae6362c56f7c361e
   security_group: spits-inbound-security-group
 
+spits-worker-instance-aws-g3.4xlarge:
+  provider: aws-east-1-config
+  login: ubuntu-linux-login
+  flavor: g3.4xlarge
+  image_id: ami-0ae6362c56f7c361e
+  security_group: spits-inbound-security-group
+
+  spits-worker-instance-aws-g3.8xlarge:
+  provider: aws-east-1-config
+  login: ubuntu-linux-login
+  flavor: g3.8xlarge
+  image_id: ami-0ae6362c56f7c361e
+  security_group: spits-inbound-security-group
+
 spits-worker-instance-aws-g3.16xlarge:
   provider: aws-east-1-config
   login: ubuntu-linux-login
   flavor: g3.16xlarge
+  image_id: ami-0ae6362c56f7c361e
+  security_group: spits-inbound-security-group
+
+spits-worker-instance-aws-p2.16xlarge:
+  provider: aws-east-1-config
+  login: ubuntu-linux-login
+  flavor: p2.16xlarge
   image_id: ami-0ae6362c56f7c361e
   security_group: spits-inbound-security-group
 
