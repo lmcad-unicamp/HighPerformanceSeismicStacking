@@ -1,3 +1,4 @@
+#include "common/include/execution/Utils.hpp"
 #include "common/include/model/Gather.hpp"
 #include "common/include/model/Utils.hpp"
 #include "common/include/output/Logger.hpp"
@@ -114,7 +115,11 @@ void Gather::readGatherFromFile(const string& inFile) {
         cdps[m].incrementSampleCountBy(trace.getSampleCount());
     }
 
-    std::sort(traces.begin(), traces.end());
+
+    chrono::duration<double> sortTime = chrono::duration<double>::zero();
+    MEASURE_EXEC_TIME(sortTime, std::sort(traces.begin(), traces.end()));
+
+    LOGI("Sorting time = " << sortTime.count() << " s");
 
     LOGI("Number of CDPs = " << cdps.size());
     LOGI("Number of traces in the gather = " << traces.size());

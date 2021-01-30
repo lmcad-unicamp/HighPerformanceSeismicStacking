@@ -75,6 +75,10 @@ void ComputeAlgorithm::saveStatisticalResults(
 ) {
     Gather* gather = Gather::getInstance();
 
+    chrono::duration<double> statisticalDuration = chrono::duration<double>::zero();
+
+    chrono::steady_clock::time_point stasticalStartTime = chrono::steady_clock::now();
+
     vector<float> tempNotUsedCount(deviceNotUsedCountArray->getElementCount());
 
     deviceNotUsedCountArray->pasteTo(tempNotUsedCount);
@@ -99,7 +103,11 @@ void ComputeAlgorithm::saveStatisticalResults(
 
     computedStatisticalResults[StatisticResult::TOTAL_KERNEL_EXECUTION_TIME] = totalExecutionTime.count();
 
-    LOGD("Total execution time for selecting traces is " << selectionExecutionTime.count() << "s");
+    statisticalDuration += chrono::steady_clock::now() - stasticalStartTime;
+
+    computedStatisticalResults[StatisticResult::TOTAL_STATISTIC_COMPUTE_TIME] = statisticalDuration.count();
+
+    LOGI("Total execution time for selecting traces is " << selectionExecutionTime.count() << "s");
 
     LOGI("Total execution time for kernels is " << totalExecutionTime.count() << "s");
 }
@@ -149,7 +157,9 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST]->copyFrom(tempHalfoffset);
     deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]->copyFrom(tempHalfoffsetSquared);
 
-    LOGH("Copy time is " << copyExecutionTime.count());
+    LOGI("Copy time is " << copyExecutionTime.count());
+
+    computedStatisticalResults[StatisticResult::TOTAL_COPY_TIME] = copyExecutionTime.count();
 }
 
 void ComputeAlgorithm::compileKernels(const string& deviceKernelSourcePath) {
