@@ -20,6 +20,7 @@ __global__
 void computeSemblancesForCommonMidPoint(
     const float *samples,
     const float *halfoffsetSquared,
+    unsigned int startingTraceIndex,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     float dtInSeconds,
@@ -54,8 +55,10 @@ void computeSemblancesForCommonMidPoint(
         unsigned int usedCount = 0;
 
         for (unsigned int traceIndex = 0; traceIndex < traceCount; traceIndex++) {
-            float h_sq = halfoffsetSquared[traceIndex];
-            const float *traceSamples = samples + traceIndex * samplesPerTrace;
+            unsigned int traceIndexWithOffset = startingTraceIndex + traceIndex;
+
+            float h_sq = halfoffsetSquared[traceIndexWithOffset];
+            const float *traceSamples = samples + traceIndexWithOffset * samplesPerTrace;
 
             float t = sqrt(t0 * t0 + c * h_sq);
 

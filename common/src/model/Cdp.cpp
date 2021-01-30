@@ -29,3 +29,7 @@ bool Cdp::operator<(const Cdp& other) const {
 bool Cdp::operator==(int other_id) const {
     return (cdpInfo.cdp == other_id);
 }
+
+unsigned int Cdp::getTraceCount() const {
+    return traceCount;
+}

@@ -7,6 +7,7 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
     const float *samples,
     const float *midpoint,
     const float *halfoffsetSquared,
+    unsigned int startingTraceIndex,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     unsigned int individualsPerPopulation,
