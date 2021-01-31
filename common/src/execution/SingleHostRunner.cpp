@@ -1,4 +1,5 @@
 #include "common/include/execution/SingleHostRunner.hpp"
+#include "common/include/execution/Utils.hpp"
 #include "common/include/output/Dumper.hpp"
 
 #include <cerrno>
@@ -60,7 +61,11 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
     computeAlgorithm->setUp();
 
+    chrono::duration<double> mutexLockDuration = chrono::duration<double>::zero();
+
     while (1) {
+
+        chrono::steady_clock::time_point mutexLockTime = chrono::steady_clock::now();
 
         queueMutex.lock();
 
@@ -73,6 +78,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
         mipointQueue.pop();
 
         queueMutex.unlock();
+
+        mutexLockDuration += chrono::steady_clock::now() - mutexLockTime;
 
         computeAlgorithm->computeSemblanceAndParametersForMidpoint(m0);
 
@@ -87,6 +94,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
         resultSetMutex.unlock();
     }
+
+    LOGI("Queue mutex blocked time = " << mutexLockDuration.count() << " s");
 }
 
 int SingleHostRunner::main(int argc, const char *argv[]) {

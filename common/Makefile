@@ -15,7 +15,7 @@ endif
 
 CFLAGS += -Wall -fPIC -std=c++17 -Wno-sign-conversion
 
-LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -L/usr/lib/gcc/x86_64-linux-gnu/8/ -lstdc++fs
+LDFLAGS += -L$(PROJECT_ROOT_PATH)/boost.1.73.0/lib -lboost_program_options -lboost_system -lboost_filesystem -lm -L/usr/lib/gcc/x86_64-linux-gnu/8/ -lstdc++fs
 
 #
 # Folder paths
@@ -23,6 +23,8 @@ LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -L/usr/
 
 BINARY_PATH = $(PROJECT_ROOT_PATH)/common/bin/
 SPITS_PATH = $(PROJECT_ROOT_PATH)/common/main/spitz
+
+BOOST_LIBRARY_PATH = $(PROJECT_ROOT_PATH)/boost.1.73.0/include
 
 CPP_SOURCE = $(shell find $(PROJECT_ROOT_PATH)/common/src -name '*.cpp')
 CPP_OBJECT = $(CPP_SOURCE:.cpp=.o)
@@ -32,7 +34,7 @@ SPITS_LIBRARY_PATH = $(PROJECT_ROOT_PATH)/spits/API/include/
 GPP = g++-8
 
 %.o: %.cpp
-	$(GPP) -o $@ -c $< -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(CFLAGS)
+	$(GPP) -o $@ -c $< -I$(PROJECT_ROOT_PATH) -I$(SPITS_LIBRARY_PATH) $(CFLAGS) -I$(BOOST_LIBRARY_PATH)
 
 dependencies: $(CPP_OBJECT)
 
