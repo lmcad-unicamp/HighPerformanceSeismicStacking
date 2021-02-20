@@ -59,8 +59,10 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
     ResultSet* resultSet = ref->getResultSet();
 
+    queueMutex.lock();
     chrono::duration<double> setUpTime = chrono::duration<double>::zero();
     MEASURE_EXEC_TIME(setUpTime, computeAlgorithm->setUp());
+    queueMutex.unlock();
 
     chrono::duration<double> mutexLockDuration = chrono::duration<double>::zero();
     chrono::duration<double> resultSetMutexLockDuration = chrono::duration<double>::zero();
