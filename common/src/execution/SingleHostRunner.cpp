@@ -43,10 +43,6 @@ ComputeAlgorithm* SingleHostRunner::getComputeAlgorithm() {
 
     ComputeAlgorithm* computeAlgorithm = parser->parseComputeAlgorithm(algorithmBuilder, devContext, traveltime);
 
-    chrono::duration<double> setUpTime = chrono::duration<double>::zero();
-    MEASURE_EXEC_TIME(setUpTime, computeAlgorithm->setUp());
-    LOGI("Set up time = " << setUpTime.count() << " s");
-
     return computeAlgorithm;
 }
 
@@ -58,6 +54,10 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int threadIn
     mutex& resultSetMutex = ref->getResultSetMutex();
     queue<float>& midpointQueue = ref->getMidpointQueue(threadIndex);
     ResultSet* resultSet = ref->getResultSet();
+
+    chrono::duration<double> setUpTime = chrono::duration<double>::zero();
+    MEASURE_EXEC_TIME(setUpTime, computeAlgorithm->setUp());
+    LOGI("Set up time = " << setUpTime.count() << " s");
 
     chrono::duration<double> resultSetMutexLockDuration = chrono::duration<double>::zero();
 
