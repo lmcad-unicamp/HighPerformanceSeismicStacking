@@ -15,9 +15,9 @@ class SingleHostRunner {
     protected:
         Parser* parser;
 
-        mutex resultSetMutex, queueMutex, deviceMutex;
+        mutex resultSetMutex, deviceMutex;
 
-        queue<float> midpointQueue;
+        vector<queue<float>> midpointQueues;
 
         ComputeAlgorithmBuilder* algorithmBuilder;
 
@@ -42,7 +42,7 @@ class SingleHostRunner {
 
         ResultSet* getResultSet();
 
-        queue<float>& getMidpointQueue();
+        queue<float>& getMidpointQueue(unsigned int threadId);
 
         mutex& getDeviceMutex();
 
@@ -50,7 +50,7 @@ class SingleHostRunner {
 
         mutex& getResultSetMutex();
 
-        static void workerThread(SingleHostRunner *ref);
+        static void workerThread(SingleHostRunner *ref, unsigned int threadIndex);
 
         //
         // Virtual methods.
