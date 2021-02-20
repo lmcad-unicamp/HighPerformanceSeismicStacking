@@ -59,7 +59,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
     ResultSet* resultSet = ref->getResultSet();
 
-    computeAlgorithm->setUp();
+    chrono::duration<double> setUpTime = chrono::duration<double>::zero();
+    MEASURE_EXEC_TIME(setUpTime, computeAlgorithm->setUp());
 
     chrono::duration<double> mutexLockDuration = chrono::duration<double>::zero();
     chrono::duration<double> resultSetMutexLockDuration = chrono::duration<double>::zero();
@@ -100,6 +101,7 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
         resultSetMutexLockDuration += chrono::steady_clock::now() - resultSetMutexLockTime;
     }
 
+    LOGI("Set up time = " << setUpTime.count() << " s");
     LOGI("Queue mutex blocked time = " << mutexLockDuration.count() << " s");
     LOGI("Result set mutex blocked time = " << resultSetMutexLockDuration.count() << " s");
 }
