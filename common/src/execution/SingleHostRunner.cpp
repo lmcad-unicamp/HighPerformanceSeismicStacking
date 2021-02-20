@@ -62,6 +62,7 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
     computeAlgorithm->setUp();
 
     chrono::duration<double> mutexLockDuration = chrono::duration<double>::zero();
+    chrono::duration<double> resultSetMutexLockDuration = chrono::duration<double>::zero();
 
     while (1) {
 
@@ -83,6 +84,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
         computeAlgorithm->computeSemblanceAndParametersForMidpoint(m0);
 
+        chrono::steady_clock::time_point resultSetMutexLockTime = chrono::steady_clock::now();
+
         resultSetMutex.lock();
 
         resultSet->setAllResultsForMidpoint(m0, computeAlgorithm->getComputedResults());
@@ -93,9 +96,12 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
         }
 
         resultSetMutex.unlock();
+
+        resultSetMutexLockDuration += chrono::steady_clock::now() - resultSetMutexLockTime;
     }
 
     LOGI("Queue mutex blocked time = " << mutexLockDuration.count() << " s");
+    LOGI("Result set mutex blocked time = " << resultSetMutexLockDuration.count() << " s");
 }
 
 int SingleHostRunner::main(int argc, const char *argv[]) {
