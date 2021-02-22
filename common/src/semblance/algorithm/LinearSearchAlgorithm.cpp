@@ -33,6 +33,8 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     deviceContext->activate();
 
+    chrono::steady_clock::time_point resetTimePoint = chrono::steady_clock::now();
+
     deviceResultArray->reset();
     deviceNotUsedCountArray->reset();
     commonResultDeviceArrayMap[SemblanceCommonResult::SEMBL]->reset();
@@ -40,6 +42,8 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     chrono::duration<double> selectionExecutionTime = chrono::duration<double>::zero();
     chrono::duration<double> totalExecutionTime = chrono::duration<double>::zero();
+    chrono::duration<double> totalCopyResultsTime = chrono::duration<double>::zero();
+    chrono::duration<double> totalResetResultsTime = chrono::steady_clock::now() - resetTimePoint;
 
     MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
 
@@ -47,7 +51,11 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
 
     MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
 
-    deviceResultArray->pasteTo(computedResults);
+    MEASURE_EXEC_TIME(totalCopyResultsTime, deviceResultArray->pasteTo(computedResults));
+
+    LOGI("Total copy results time is " << totalCopyResultsTime.count() << " s");
+
+    LOGI("Total reset time is " << totalResetResultsTime.count() << " s");
 
     float totalUsedTracesCount = static_cast<float>(filteredTracesCount) *
             static_cast<float>(numberOfSamplesPerTrace) *
