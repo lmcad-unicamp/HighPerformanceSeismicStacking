@@ -25,6 +25,8 @@ class Parser {
 
         void parseArguments(int argc, const char *argv[]);
 
+        unsigned int getNumberOfDevices() const;
+
         const string getFilename() const;
 
         const string getInputFilePath() const;

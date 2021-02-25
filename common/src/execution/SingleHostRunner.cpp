@@ -129,7 +129,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         Gather* gather = Gather::getInstance();
 
         chrono::steady_clock::time_point numOfDevicesTimePoint = chrono::steady_clock::now();
-        unsigned int devicesCount = getNumOfDevices();
+        unsigned int devicesCount = parser->getNumberOfDevices();
         chrono::duration<double> totalNumOfDevicesTime = std::chrono::steady_clock::now() - startTimePoint;
 
         vector<thread> threads(devicesCount);

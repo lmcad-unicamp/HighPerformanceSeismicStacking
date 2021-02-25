@@ -17,6 +17,7 @@ Parser::Parser() : arguments("Allowed options") {
         ("ain", value<float>(), "Angle in degrees to be used during computation of A for ZO-CRS.")
         ("azimuth", value<float>()->required(), "Azimuth angle in degrees.")
         ("bpctg", value<float>(), "Percentage of C that will be used to compute B for ZO-CRS.")
+        ("devices", value<unsigned int>()->default_value(1), "Number of devices.")
         ("h0", value<float>(), "h0 constant.")
         ("help", "Produce help message.")
         ("highest-midpoint", value<float>(), "Higher bound value for a CDP midpoint.")
@@ -48,6 +49,14 @@ void Parser::parseArguments(int argc, const char *argv[]) {
         exceptionString << "Unable to parse input arguments: " << ex.what();
         throw invalid_argument(exceptionString.str());
     }
+}
+
+unsigned int Parser::getNumberOfDevices() const {
+    if (argumentMap.count("devices")) {
+        return argumentMap["devices"].as<unsigned int>();
+    }
+
+    throw invalid_argument("Number of devices not provided.");
 }
 
 const string Parser::getFilename() const {
