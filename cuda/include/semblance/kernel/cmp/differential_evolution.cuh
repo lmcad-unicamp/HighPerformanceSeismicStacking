@@ -6,7 +6,6 @@ __global__
 void computeSemblancesForCommonMidPoint(
     const float *samples,
     const float *halfoffsetSquared,
-    unsigned int startingTraceIndex,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     unsigned int individualsPerPopulation,

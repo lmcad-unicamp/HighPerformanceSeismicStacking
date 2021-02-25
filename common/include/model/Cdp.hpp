@@ -22,6 +22,4 @@ class Cdp {
 
         bool operator<(const Cdp& other) const;
         bool operator==(int other_id) const;
-
-        unsigned int getTraceCount() const;
 };

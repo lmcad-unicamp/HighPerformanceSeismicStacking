@@ -25,8 +25,8 @@ ResultSet* SingleHostRunner::getResultSet() {
     return resultSet.get();
 }
 
-queue<float>& SingleHostRunner::getMidpointQueue(unsigned int threadId) {
-    return midpointQueues.at(threadId);
+queue<float>& SingleHostRunner::getMidpointQueue() {
+    return midpointQueue;
 }
 
 mutex& SingleHostRunner::getDeviceMutex() {
@@ -37,22 +37,26 @@ mutex& SingleHostRunner::getResultSetMutex() {
     return resultSetMutex;
 }
 
+mutex& SingleHostRunner::getQueueMutex() {
+    return queueMutex;
+}
+
 ComputeAlgorithm* SingleHostRunner::getComputeAlgorithm() {
     lock_guard<mutex> autoLock(deviceMutex);
     shared_ptr<DeviceContext> devContext(deviceContextBuilder->build(deviceIndex++));
-
-    ComputeAlgorithm* computeAlgorithm = parser->parseComputeAlgorithm(algorithmBuilder, devContext, traveltime);
-
-    return computeAlgorithm;
+    return parser->parseComputeAlgorithm(algorithmBuilder, devContext, traveltime);
 }
 
-void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int threadIndex) {
+void SingleHostRunner::workerThread(SingleHostRunner *ref) {
     float m0;
 
     unique_ptr<ComputeAlgorithm> computeAlgorithm(ref->getComputeAlgorithm());
 
     mutex& resultSetMutex = ref->getResultSetMutex();
-    queue<float>& midpointQueue = ref->getMidpointQueue(threadIndex);
+    mutex& queueMutex = ref->getQueueMutex();
+
+    queue<float>& mipointQueue = ref->getMidpointQueue();
+
     ResultSet* resultSet = ref->getResultSet();
 
     LOGI("[" << threadIndex << "] GPU Set up time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
@@ -61,12 +65,28 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int threadIn
     MEASURE_EXEC_TIME(setUpTime, computeAlgorithm->setUp());
     LOGI("Set up time = " << setUpTime.count() << " s");
 
+    chrono::duration<double> mutexLockDuration = chrono::duration<double>::zero();
     chrono::duration<double> resultSetMutexLockDuration = chrono::duration<double>::zero();
 
-    while (!midpointQueue.empty()) {
+    while (1) {
 
-        m0 = midpointQueue.front();
-        midpointQueue.pop();
+        chrono::steady_clock::time_point mutexLockTime = chrono::steady_clock::now();
+
+        LOGI("[" << threadIndex << "][" << m0 << "] Mutex Lock Time Point = " << chrono::time_point_cast<chrono::milliseconds>(mutexLockTime).time_since_epoch().count());
+
+        queueMutex.lock();
+
+        if (mipointQueue.empty()) {
+            queueMutex.unlock();
+            break;
+        }
+
+        m0 = mipointQueue.front();
+        mipointQueue.pop();
+
+        queueMutex.unlock();
+
+        mutexLockDuration += chrono::steady_clock::now() - mutexLockTime;
 
         LOGI("[" << threadIndex << "][" << m0 << "] Compute Semblance Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
@@ -90,6 +110,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int threadIn
         resultSetMutexLockDuration += chrono::steady_clock::now() - resultSetMutexLockTime;
     }
 
+    LOGI("Set up time = " << setUpTime.count() << " s");
+    LOGI("Queue mutex blocked time = " << mutexLockDuration.count() << " s");
     LOGI("Result set mutex blocked time = " << resultSetMutexLockDuration.count() << " s");
 }
 
@@ -115,18 +137,14 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         chrono::duration<double> totalReadTime = chrono::duration<double>::zero();
         MEASURE_EXEC_TIME(totalReadTime, parser->readGather());
 
-        unsigned int itIndex = 0;
-        midpointQueues.resize(devicesCount);
         for (auto it : gather->getCdps()) {
-            unsigned int queueIndex = itIndex % devicesCount;
-            midpointQueues[queueIndex].push(it.first);
-            itIndex++;
+            midpointQueue.push(it.first);
         }
 
         resultSet = make_unique<ResultSet>(traveltime->getNumberOfResults(), gather->getSamplesPerTrace());
 
         for(unsigned int deviceId = 0; deviceId < devicesCount; deviceId++) {
-            threads[deviceId] = thread(workerThread, this, deviceId);
+            threads[deviceId] = thread(workerThread, this);
         }
 
         for(unsigned int deviceId = 0; deviceId < devicesCount; deviceId++) {

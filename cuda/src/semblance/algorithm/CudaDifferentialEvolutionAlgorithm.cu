@@ -50,9 +50,8 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
     switch (traveltime->getModel()) {
         case CMP:
             computeSemblancesForCommonMidPoint<<< dimGrid, threadCount >>>(
-                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::SAMPL]),
-                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::HLFOFFST_SQ]),
-                startingTraceIndex,
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]),
                 filteredTracesCount,
                 samplesPerTrace,
                 individualsPerPopulation,
@@ -66,10 +65,9 @@ void CudaDifferentialEvolutionAlgorithm::computeSemblanceAtGpuForMidpoint(float 
             break;
         case ZOCRS:
             computeSemblancesForZeroOffsetCommonReflectionSurface<<< dimGrid, threadCount >>>(
-                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::SAMPL]),
-                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
-                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::HLFOFFST_SQ]),
-                startingTraceIndex,
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_SAMPL]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_MDPNT]),
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::FILT_HLFOFFST_SQ]),
                 filteredTracesCount,
                 samplesPerTrace,
                 individualsPerPopulation,
@@ -126,29 +124,35 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
     float apm = gather->getApm();
     float h0 = traveltime->getReferenceHalfoffset();
 
+    vector<unsigned char> usedTraceMask(traceCount);
+
+    unsigned char* deviceUsedTraceMaskArray;
+    CUDA_ASSERT(cudaMalloc((void **) &deviceUsedTraceMaskArray, traceCount * sizeof(char)));
+    CUDA_ASSERT(cudaMemset(deviceUsedTraceMaskArray, 0, traceCount * sizeof(unsigned char)))
+
+    dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(traceCount) / static_cast<float>(threadCount))));
+
+    chrono::duration<double> copyTime = chrono::duration<double>::zero();
+
     switch (traveltime->getModel()) {
         case CMP:
-        case ZOCRS: {
-            pair<unsigned int, unsigned int> traceRange = selectTracesContinuous(m0);
-
-            startingTraceIndex = traceRange.first;
-            filteredTracesCount = traceRange.second;
-
-            computedStatisticalResults[StatisticResult::TOTAL_COPY_TIME] = 0;
-
+            selectTracesForCommonMidPoint<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
+                traceCount,
+                deviceUsedTraceMaskArray,
+                m0
+            );
             break;
-        }
-        case OCT: {
-            vector<unsigned char> usedTraceMask(traceCount);
-
-            unsigned char* deviceUsedTraceMaskArray;
-            CUDA_ASSERT(cudaMalloc((void **) &deviceUsedTraceMaskArray, traceCount * sizeof(char)));
-            CUDA_ASSERT(cudaMemset(deviceUsedTraceMaskArray, 0, traceCount * sizeof(unsigned char)))
-
-            dim3 dimGrid(static_cast<int>(ceil(static_cast<float>(traceCount) / static_cast<float>(threadCount))));
-
-            chrono::duration<double> copyTime = chrono::duration<double>::zero();
-
+        case ZOCRS:
+            selectTracesForZeroOffsetCommonReflectionSurface<<<dimGrid, threadCount>>>(
+                CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
+                traceCount,
+                deviceUsedTraceMaskArray,
+                m0,
+                apm
+            );
+            break;
+        case OCT:
             selectTracesForOffsetContinuationTrajectoryAndDifferentialEvolution<<<dimGrid, threadCount>>>(
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::MDPNT]),
                 CUDA_DEV_PTR(deviceFilteredTracesDataMap[GatherData::HLFOFFST]),
@@ -162,22 +166,20 @@ void CudaDifferentialEvolutionAlgorithm::selectTracesToBeUsedForMidpoint(float m
                 h0,
                 deviceUsedTraceMaskArray
             );
-
-            CUDA_ASSERT(cudaGetLastError());
-            CUDA_ASSERT(cudaDeviceSynchronize());
-
-            CUDA_ASSERT(cudaMemcpy(usedTraceMask.data(), deviceUsedTraceMaskArray, traceCount * sizeof(unsigned char), cudaMemcpyDeviceToHost));
-            CUDA_ASSERT(cudaFree(deviceUsedTraceMaskArray));
-
-            MEASURE_EXEC_TIME(copyTime, copyOnlySelectedTracesToDevice(usedTraceMask));
-
-            LOGD("Execution time for copying traces is " << copyTime.count() << "s");
-
             break;
-        }
         default:
             throw invalid_argument("Invalid traveltime model");
     }
+
+    CUDA_ASSERT(cudaGetLastError());
+    CUDA_ASSERT(cudaDeviceSynchronize());
+
+    CUDA_ASSERT(cudaMemcpy(usedTraceMask.data(), deviceUsedTraceMaskArray, traceCount * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+    CUDA_ASSERT(cudaFree(deviceUsedTraceMaskArray));
+
+    MEASURE_EXEC_TIME(copyTime, copyOnlySelectedTracesToDevice(usedTraceMask));
+
+    LOGD("Execution time for copying traces is " << copyTime.count() << "s");
 }
 
 void CudaDifferentialEvolutionAlgorithm::setupRandomSeedArray() {

@@ -32,9 +32,6 @@ void ComputeAlgorithm::copyGatherDataToDevice() {
     Gather* gather = Gather::getInstance();
 
     unsigned int traceCount = gather->getTotalTracesCount();
-    unsigned int samplesPerTrace = gather->getSamplesPerTrace();
-
-    deviceFilteredTracesDataMap[GatherData::SAMPL].reset(dataFactory->build(traceCount * samplesPerTrace, deviceContext));
 
     deviceFilteredTracesDataMap[GatherData::MDPNT].reset(dataFactory->build(traceCount, deviceContext));
 
@@ -45,10 +42,6 @@ void ComputeAlgorithm::copyGatherDataToDevice() {
     vector<float> tempMidpointArray(traceCount), tempHalfoffsetArray(traceCount), tempHalfoffsetSqArray(traceCount);
 
     for (unsigned int t = 0; t < traceCount; t++) {
-        const Trace& trace = gather->getTraceAtIndex(t);
-
-        deviceFilteredTracesDataMap[GatherData::SAMPL]->copyFromWithOffset(trace.getSamples(), t * samplesPerTrace);
-
         float m = gather->getMidpointOfTrace(t);
         float h = gather->getHalfoffsetOfTrace(t);
 
@@ -170,44 +163,4 @@ void ComputeAlgorithm::copyOnlySelectedTracesToDevice(
 }
 
 void ComputeAlgorithm::compileKernels(const string& deviceKernelSourcePath) {
-}
-
-pair<unsigned int, unsigned int> ComputeAlgorithm::selectTracesContinuous(float m0) const {
-
-    pair<unsigned int, unsigned int> traceRange(0, 0);
-
-    Gather* gather = Gather::getInstance();
-    float apm = gather->getApm();
-
-    const map<float, Cdp>& cdps = gather->getCdps();
-    unsigned int traceIndex = 0;
-    bool foundStartIndex = false;
-
-    for (auto it = cdps.begin(); it != cdps.end(); it++) {
-        float m = it->first;
-        const Cdp& cdp = it->second;
-        bool useTrace = false;
-
-        switch (traveltime->getModel()) {
-            case CMP:
-                useTrace = (m0 == m);
-                break;
-            case ZOCRS:
-                useTrace = fabs(m0 - m) <= apm;
-                break;
-            default:
-                useTrace = false;
-        }
-
-        if (useTrace) {
-            if (!foundStartIndex) {
-                traceRange.first = traceIndex;
-                foundStartIndex = true;
-            }
-            traceRange.second += cdp.getTraceCount();
-        }
-        traceIndex += cdp.getTraceCount();
-    }
-
-    return traceRange;
 }

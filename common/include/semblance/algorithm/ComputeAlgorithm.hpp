@@ -7,7 +7,6 @@
 #include "common/include/traveltime/Traveltime.hpp"
 
 #include <chrono>
-#include <cmath>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -17,7 +16,6 @@ using namespace std;
 #define DEFAULT_THREAD_COUNT 64
 
 enum class GatherData {
-    SAMPL,
     MDPNT,
     HLFOFFST,
     HLFOFFST_SQ,
@@ -52,15 +50,13 @@ class ComputeAlgorithm {
 
         unordered_map<GatherData, unique_ptr<DataContainer>> deviceFilteredTracesDataMap;
 
-        unsigned int filteredTracesCount, startingTraceIndex;
+        unsigned int filteredTracesCount;
 
         vector<float> computedResults;
 
         //
         // Functions
         //
-
-        pair<unsigned int, unsigned int> selectTracesContinuous(float m0) const;
 
     public:
         ComputeAlgorithm(
