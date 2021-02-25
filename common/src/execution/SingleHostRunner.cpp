@@ -120,6 +120,8 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
     try {
         chrono::steady_clock::time_point startTimePoint = chrono::steady_clock::now();
 
+        LOGI("Start Time Point = " << chrono::time_point_cast<chrono::milliseconds>(startTimePoint).time_since_epoch().count());
+
         Gather* gather = Gather::getInstance();
 
         unsigned int devicesCount = getNumOfDevices();
@@ -177,6 +179,8 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         LOGI("Write time is " << totalWriteTime.count() << " s");
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
         LOGI("It took " << totalExecutionTime.count() << "s to compute.");
+
+        LOGI("End Time Point = " << chrono::time_point_cast<chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count());
 
         return 0;
     }
