@@ -50,7 +50,7 @@ class SingleHostRunner {
 
         mutex& getResultSetMutex();
 
-        static void workerThread(SingleHostRunner *ref);
+        static void workerThread(SingleHostRunner *ref, unsigned int deviceId);
 
         //
         // Virtual methods.

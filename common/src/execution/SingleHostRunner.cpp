@@ -47,7 +47,7 @@ ComputeAlgorithm* SingleHostRunner::getComputeAlgorithm() {
     return parser->parseComputeAlgorithm(algorithmBuilder, devContext, traveltime);
 }
 
-void SingleHostRunner::workerThread(SingleHostRunner *ref) {
+void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int deviceId) {
     float m0;
 
     unique_ptr<ComputeAlgorithm> computeAlgorithm(ref->getComputeAlgorithm());
@@ -59,7 +59,7 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
     ResultSet* resultSet = ref->getResultSet();
 
-    LOGI("[" << threadIndex << "] GPU Set up time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+    LOGI("[" << deviceId << "] GPU Set up time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
     chrono::duration<double> setUpTime = chrono::duration<double>::zero();
     MEASURE_EXEC_TIME(setUpTime, computeAlgorithm->setUp());
@@ -72,7 +72,7 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
         chrono::steady_clock::time_point mutexLockTime = chrono::steady_clock::now();
 
-        LOGI("[" << threadIndex << "][" << m0 << "] Mutex Lock Time Point = " << chrono::time_point_cast<chrono::milliseconds>(mutexLockTime).time_since_epoch().count());
+        LOGI("[" << deviceId << "][" << m0 << "] Mutex Lock Time Point = " << chrono::time_point_cast<chrono::milliseconds>(mutexLockTime).time_since_epoch().count());
 
         queueMutex.lock();
 
@@ -88,13 +88,13 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
         mutexLockDuration += chrono::steady_clock::now() - mutexLockTime;
 
-        LOGI("[" << threadIndex << "][" << m0 << "] Compute Semblance Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+        LOGI("[" << deviceId << "][" << m0 << "] Compute Semblance Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
         computeAlgorithm->computeSemblanceAndParametersForMidpoint(m0);
 
         chrono::steady_clock::time_point resultSetMutexLockTime = chrono::steady_clock::now();
 
-        LOGI("[" << threadIndex << "][" << m0 << "] Saving Results Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+        LOGI("[" << deviceId << "][" << m0 << "] Saving Results Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
         resultSetMutex.lock();
 
@@ -144,7 +144,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         resultSet = make_unique<ResultSet>(traveltime->getNumberOfResults(), gather->getSamplesPerTrace());
 
         for(unsigned int deviceId = 0; deviceId < devicesCount; deviceId++) {
-            threads[deviceId] = thread(workerThread, this);
+            threads[deviceId] = thread(workerThread, this, deviceId);
         }
 
         for(unsigned int deviceId = 0; deviceId < devicesCount; deviceId++) {
