@@ -126,17 +126,17 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         LOGI("Start Time Point = " << chrono::time_point_cast<chrono::milliseconds>(startTimePoint).time_since_epoch().count());
 
+        parser->parseArguments(argc, argv);
+
         Gather* gather = Gather::getInstance();
 
         chrono::steady_clock::time_point numOfDevicesTimePoint = chrono::steady_clock::now();
         unsigned int devicesCount = parser->getNumberOfDevices();
-        chrono::duration<double> totalNumOfDevicesTime = std::chrono::steady_clock::now() - startTimePoint;
+        chrono::duration<double> totalNumOfDevicesTime = std::chrono::steady_clock::now() - numOfDevicesTimePoint;
 
         vector<thread> threads(devicesCount);
 
-        LOGI("Parser Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
-
-        parser->parseArguments(argc, argv);
+        LOGI("Parse Traveltime Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
         traveltime.reset(parser->parseTraveltime());
 
