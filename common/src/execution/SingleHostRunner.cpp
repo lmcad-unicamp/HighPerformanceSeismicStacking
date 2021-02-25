@@ -72,7 +72,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int deviceId
 
         chrono::steady_clock::time_point mutexLockTime = chrono::steady_clock::now();
 
-        LOGI("[" << deviceId << "][" << m0 << "] Mutex Lock Time Point = " << chrono::time_point_cast<chrono::milliseconds>(mutexLockTime).time_since_epoch().count());
+        LOGI("------");
+        LOGI("[" << deviceId << "] Mutex Lock Time Point = " << chrono::time_point_cast<chrono::milliseconds>(mutexLockTime).time_since_epoch().count());
 
         queueMutex.lock();
 
