@@ -128,7 +128,9 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         Gather* gather = Gather::getInstance();
 
+        chrono::steady_clock::time_point numOfDevicesTimePoint = chrono::steady_clock::now();
         unsigned int devicesCount = getNumOfDevices();
+        chrono::duration<double> totalNumOfDevicesTime = std::chrono::steady_clock::now() - startTimePoint;
 
         vector<thread> threads(devicesCount);
 
@@ -189,6 +191,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
 
+        LOGI("Get Number of Devices time is " << totalNumOfDevicesTime.count() << " s");
         LOGI("Read time is " << totalReadTime.count() << " s");
         LOGI("Write time is " << totalWriteTime.count() << " s");
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
