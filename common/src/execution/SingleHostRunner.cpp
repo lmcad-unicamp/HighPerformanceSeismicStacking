@@ -48,6 +48,8 @@ ComputeAlgorithm* SingleHostRunner::getComputeAlgorithm() {
 }
 
 void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int deviceId) {
+    LOGI("[" << deviceId << "] Worker thread start time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+
     float m0;
 
     unique_ptr<ComputeAlgorithm> computeAlgorithm(ref->getComputeAlgorithm());
@@ -111,7 +113,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int deviceId
         resultSetMutexLockDuration += chrono::steady_clock::now() - resultSetMutexLockTime;
     }
 
-    LOGI("Set up time = " << setUpTime.count() << " s");
+    LOGI("[" << deviceId << "] End thread Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+
     LOGI("Queue mutex blocked time = " << mutexLockDuration.count() << " s");
     LOGI("Result set mutex blocked time = " << resultSetMutexLockDuration.count() << " s");
 }
@@ -128,6 +131,8 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         unsigned int devicesCount = getNumOfDevices();
 
         vector<thread> threads(devicesCount);
+
+        LOGI("Parser Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
         parser->parseArguments(argc, argv);
 
@@ -156,13 +161,21 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         chrono::steady_clock::time_point writeTimePoint = chrono::steady_clock::now();
 
+        LOGI("Dump Gather Time Point = " << chrono::time_point_cast<chrono::milliseconds>(writeTimePoint).time_since_epoch().count());
+
         dumper.dumpGatherParameters(parser->getInputFilePath());
 
+        LOGI("Dump Traveltime Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+
         dumper.dumpTraveltime(traveltime.get());
+
+        LOGI("Dump Result Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
         for (unsigned int i = 0; i < traveltime->getNumberOfResults(); i++) {
             dumper.dumpResult(traveltime->getDescriptionForResult(i), resultSet->getArrayForResult(i));
         }
+
+        LOGI("Dump Stat Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
         for (unsigned int i = 0; i < static_cast<unsigned int>(StatisticResult::CNT); i++) {
             StatisticResult statResult = static_cast<StatisticResult>(i);
