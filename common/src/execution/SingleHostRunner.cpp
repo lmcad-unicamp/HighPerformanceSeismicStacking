@@ -55,6 +55,8 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int threadIn
     queue<float>& midpointQueue = ref->getMidpointQueue(threadIndex);
     ResultSet* resultSet = ref->getResultSet();
 
+    LOGI("[" << threadIndex << "] GPU Set up time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+
     chrono::duration<double> setUpTime = chrono::duration<double>::zero();
     MEASURE_EXEC_TIME(setUpTime, computeAlgorithm->setUp());
     LOGI("Set up time = " << setUpTime.count() << " s");
@@ -66,9 +68,13 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref, unsigned int threadIn
         m0 = midpointQueue.front();
         midpointQueue.pop();
 
+        LOGI("[" << threadIndex << "][" << m0 << "] Compute Semblance Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+
         computeAlgorithm->computeSemblanceAndParametersForMidpoint(m0);
 
         chrono::steady_clock::time_point resultSetMutexLockTime = chrono::steady_clock::now();
+
+        LOGI("[" << threadIndex << "][" << m0 << "] Saving Results Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
         resultSetMutex.lock();
 

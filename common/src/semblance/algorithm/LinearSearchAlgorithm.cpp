@@ -32,8 +32,11 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
     unsigned int totalNumberOfParameters = getTotalNumberOfParameters();
 
     deviceContext->activate();
+    unsigned int deviceId = deviceContext->getDeviceId();
 
     chrono::steady_clock::time_point resetTimePoint = chrono::steady_clock::now();
+
+    LOGI("[" << deviceId << "] Reset Time Point = " << chrono::time_point_cast<chrono::milliseconds>(resetTimePoint).time_since_epoch().count());
 
     deviceResultArray->reset();
     deviceNotUsedCountArray->reset();
@@ -45,11 +48,17 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
     chrono::duration<double> totalCopyResultsTime = chrono::duration<double>::zero();
     chrono::duration<double> totalResetResultsTime = chrono::steady_clock::now() - resetTimePoint;
 
+    LOGI("[" << deviceId << "] Selection Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+
     MEASURE_EXEC_TIME(selectionExecutionTime, selectTracesToBeUsedForMidpoint(m0));
 
     LOGD("totalNumberOfParameters = " << totalNumberOfParameters);
 
+    LOGI("[" << deviceId << "] Compute Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
+
     MEASURE_EXEC_TIME(totalExecutionTime, computeSemblanceAtGpuForMidpoint(m0));
+
+    LOGI("[" << deviceId << "] Get Results Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
     MEASURE_EXEC_TIME(totalCopyResultsTime, deviceResultArray->pasteTo(computedResults));
 
@@ -60,6 +69,9 @@ void LinearSearchAlgorithm::computeSemblanceAndParametersForMidpoint(float m0) {
     float totalUsedTracesCount = static_cast<float>(filteredTracesCount) *
             static_cast<float>(numberOfSamplesPerTrace) *
             static_cast<float>(totalNumberOfParameters);
+
+
+    LOGI("[" << deviceId << "] Save Stat Time Point = " << chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now()).time_since_epoch().count());
 
     saveStatisticalResults(totalUsedTracesCount, totalExecutionTime, selectionExecutionTime);
 }

@@ -6,6 +6,8 @@ class DeviceContext {
 
     public:
         DeviceContext(unsigned int devId);
+        unsigned int getDeviceId() const;
+
         virtual ~DeviceContext();
         virtual void activate() const = 0;
 };
