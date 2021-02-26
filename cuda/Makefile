@@ -23,7 +23,7 @@ endif
 
 LDFLAGS += -lboost_program_options -lboost_system -lboost_filesystem -lm -lcuda -lcurand -L/usr/lib/gcc/x86_64-linux-gnu/8/ -lstdc++fs
 CFLAGS += -Wall -fPIC -std=c++17 -Wno-sign-conversion
-NVCCFLAGS += --use_fast_math -Xcompiler -Wall -Xcompiler -fPIC -arch $(ARCH)
+NVCCFLAGS += --use_fast_math -Xcompiler -Wall -Xcompiler -fPIC -gencode arch=compute_$(ARCH),code=sm_$(ARCH)
 
 #
 # Folder paths
