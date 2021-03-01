@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/include/execution/Utils.hpp"
 #include "common/include/parser/Parser.hpp"
 #include "common/include/model/Gather.hpp"
 #include "common/include/semblance/data/DeviceContextBuilder.hpp"

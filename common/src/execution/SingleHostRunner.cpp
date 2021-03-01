@@ -96,11 +96,14 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         Gather* gather = Gather::getInstance();
 
+        chrono::steady_clock::time_point initDriverTimePoint = chrono::steady_clock::now();
         unsigned int devicesCount = getNumOfDevices();
+        chrono::duration<double> initDriverDuration = std::chrono::steady_clock::now() - initDriverTimePoint;
 
         vector<thread> threads(devicesCount);
 
-        parser->parseArguments(argc, argv);
+        chrono::duration<double> parseArgsDuration = chrono::duration<double>::zero();
+        MEASURE_EXEC_TIME(parseArgsDuration, parser->parseArguments(argc, argv));
 
         traveltime.reset(parser->parseTraveltime());
 
@@ -108,13 +111,17 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
 
         dumper.createDir();
 
-        parser->readGather();
+        chrono::duration<double> readGatherDuration = chrono::duration<double>::zero();
+        MEASURE_EXEC_TIME(readGatherDuration, parser->readGather());
 
         for (auto it : gather->getCdps()) {
             midpointQueue.push(it.first);
         }
 
         resultSet = make_unique<ResultSet>(traveltime->getNumberOfResults(), gather->getSamplesPerTrace());
+
+        LOGI("Starting worker threads...");
+        chrono::steady_clock::time_point startWorkerThreadTimePoint = chrono::steady_clock::now();
 
         for(unsigned int deviceId = 0; deviceId < devicesCount; deviceId++) {
             threads[deviceId] = thread(workerThread, this);
@@ -123,6 +130,9 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         for(unsigned int deviceId = 0; deviceId < devicesCount; deviceId++) {
             threads[deviceId].join();
         }
+
+        chrono::duration<double> workerThreadDuration = std::chrono::steady_clock::now() - startWorkerThreadTimePoint;
+        chrono::steady_clock::time_point dumpResultsTimePoint = chrono::steady_clock::now();
 
         dumper.dumpGatherParameters(parser->getInputFilePath());
 
@@ -140,8 +150,14 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
             LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
         }
 
+        chrono::duration<double> dumpResultsDuration = std::chrono::steady_clock::now() - dumpResultsTimePoint;
         chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
 
+        LOGI("Driver init. duration is " << initDriverDuration.count() << " s");
+        LOGI("Read gather duration is " << readGatherDuration.count() << " s");
+        LOGI("Parse args. duration is " << parseArgsDuration.count() << " s");
+        LOGI("Worker threads duration is " << workerThreadDuration.count() << " s");
+        LOGI("Dump results duration is " << dumpResultsDuration.count() << " s");
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
         LOGI("It took " << totalExecutionTime.count() << "s to compute.");
 
