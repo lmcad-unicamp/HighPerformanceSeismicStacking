@@ -54,6 +54,10 @@ const string Parser::getFilename() const {
     return filesystem::path(getInputFilePath()).stem();
 }
 
+unsigned int Parser::getGpuThreadCount() const {
+    return argumentMap["thread-count"].as<unsigned int>();
+}
+
 const string Parser::getInputFilePath() const {
     if (argumentMap.count("input")) {
         return argumentMap["input"].as<string>();

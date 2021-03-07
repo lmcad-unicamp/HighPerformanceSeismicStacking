@@ -158,6 +158,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         LOGI("Parse args. duration is " << parseArgsDuration.count() << " s");
         LOGI("Worker threads duration is " << workerThreadDuration.count() << " s");
         LOGI("Dump results duration is " << dumpResultsDuration.count() << " s");
+        LOGI("Thread/block is " << parser->getGpuThreadCount());
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
         LOGI("It took " << totalExecutionTime.count() << "s to compute.");
 

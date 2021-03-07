@@ -27,6 +27,8 @@ class Parser {
 
         const string getFilename() const;
 
+        unsigned int getGpuThreadCount() const;
+
         const string getInputFilePath() const;
 
         const string getOutputDirectory() const;
