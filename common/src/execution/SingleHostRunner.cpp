@@ -58,14 +58,21 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
     ResultSet* resultSet = ref->getResultSet();
 
-    computeAlgorithm->setUp();
+    chrono::duration<double> lockDuration = chrono::duration<double>::zero();
+    chrono::steady_clock::time_point lockTimePoint;
+
+    chrono::duration<double> setUpDuration = chrono::duration<double>::zero();
+    MEASURE_EXEC_TIME(setUpDuration, computeAlgorithm->setUp());
 
     while (1) {
+
+        lockTimePoint = chrono::steady_clock::now();
 
         queueMutex.lock();
 
         if (mipointQueue.empty()) {
             queueMutex.unlock();
+            lockDuration += std::chrono::steady_clock::now() - lockTimePoint;
             break;
         }
 
@@ -74,7 +81,11 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
 
         queueMutex.unlock();
 
+        lockDuration += std::chrono::steady_clock::now() - lockTimePoint;
+
         computeAlgorithm->computeSemblanceAndParametersForMidpoint(m0);
+
+        lockTimePoint = chrono::steady_clock::now();
 
         resultSetMutex.lock();
 
@@ -86,7 +97,12 @@ void SingleHostRunner::workerThread(SingleHostRunner *ref) {
         }
 
         resultSetMutex.unlock();
+
+        lockDuration += std::chrono::steady_clock::now() - lockTimePoint;
     }
+
+    LOGI("Set up time is " << setUpDuration.count() << " s.");
+    LOGI("Blocked time is " << lockDuration.count() << " s.");
 }
 
 int SingleHostRunner::main(int argc, const char *argv[]) {
@@ -160,7 +176,7 @@ int SingleHostRunner::main(int argc, const char *argv[]) {
         LOGI("Dump results duration is " << dumpResultsDuration.count() << " s");
         LOGI("Thread/block is " << parser->getGpuThreadCount());
         LOGI("Results written to " << dumper.getOutputDirectoryPath());
-        LOGI("It took " << totalExecutionTime.count() << "s to compute.");
+        LOGI("It took " << totalExecutionTime.count() << " s to compute.");
 
         return 0;
     }
