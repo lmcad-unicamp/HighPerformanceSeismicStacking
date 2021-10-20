@@ -1,39 +1,54 @@
 #! /bin/bash
 
-HEAD_COMMIT_ID="0447d1c"
+# Commit and branch to be used for the experiment
+HEAD_COMMIT_ID="9027a04"
 
+# Personal clapp's source directory
 CLAPP_SOURCE_PATH="/home/gustavociotto/clap"
 CLAPP_CLUSTER="clapp cluster"
 
+# A cluster's name
 CLUSTER_NAME="spits-cluster"
 
-AWS_INSTANCE="p2.xlarge"
-TASK_COUNT="8"
+# Instance type of the worker nodes
+AWS_INSTANCE="g4dn.xlarge"
+# Number of worker nodes
+TASK_COUNT="32"
+# Number of GPUs per node
 NW="1"
 
+# Available frameworks: cuda or opencl
 FRAMEWORK="cuda"
 
+# Root and NFS directories inside EC2's instance
 PROJECT_ROOT="/home/ubuntu/HighPerformanceSeismicStacking"
 NFS_MOUNT_POINT="/home/ubuntu/nfs"
+
+# Directory where results are going to be stored
 DATA_DIR="${NFS_MOUNT_POINT}/data"
 
+# SPITS's jobs directory
 SPITS_JOB_PATH="/home/ubuntu/spits-jobs"
+
+# SPITS compiled binaries' names
 SPITS_GREEDY_BIN="spitz_linear_search"
 SPITS_DE_BIN="spitz_de"
 
+# Parameters for DE algorithm
 GENERATIONS="32"
 POPULATION_SIZE="32"
 
-THREAD_COUNT="32"
+# Thread/block count for worker nodes
+THREAD_COUNT="64"
 
 KERNEL_PATH="${PROJECT_ROOT}/opencl/src/semblance/kernel"
 
 if [[ ${AWS_INSTANCE} == *"g4dn"* ]]; then
-    COMPUTE_CAPABILITY="sm_75"
+    COMPUTE_CAPABILITY="75"
 elif [[ ${AWS_INSTANCE} == *"p3"* ]]; then
-    COMPUTE_CAPABILITY="sm_70"
+    COMPUTE_CAPABILITY="70"
 elif [[ ${AWS_INSTANCE} == *"p2"* ]]; then
-    COMPUTE_CAPABILITY="sm_37"
+    COMPUTE_CAPABILITY="37"
 fi
 
 if [ "${FRAMEWORK}" == "opencl" ]; then
@@ -225,10 +240,9 @@ function de_offset_continuation_trajectory {
 
 . ${CLAPP_SOURCE_PATH}/clap-env/bin/activate
 
+## Uncomment the following tests to build a cluster and execute it
+
 # de_zero_offset_reflection_surface  "simple-synthetic" "0" ${THREAD_COUNT}
-
-de_zero_offset_reflection_surface  "fold2000" "90" ${THREAD_COUNT}
-
+# de_zero_offset_reflection_surface  "fold2000" "90" ${THREAD_COUNT}
 # de_offset_continuation_trajectory "simple-synthetic" "0" ${THREAD_COUNT}
-
 # de_offset_continuation_trajectory "fold2000" "90" ${THREAD_COUNT}
