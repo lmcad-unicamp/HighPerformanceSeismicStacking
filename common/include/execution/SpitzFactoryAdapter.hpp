@@ -5,6 +5,7 @@
 #include "common/include/execution/SpitzWorker.hpp"
 #include "common/include/parser/Parser.hpp"
 
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <spits.hpp>
@@ -14,7 +15,7 @@ using namespace std;
 class SpitzFactoryAdapter : public spits::factory {
     protected:
         Parser* parser;
-
+        shared_ptr<chrono::steady_clock::time_point> startTimePoint;
         shared_ptr<Traveltime> traveltime;
 
     public:

@@ -8,7 +8,9 @@
 
 using namespace std;
 
-SpitzFactoryAdapter::SpitzFactoryAdapter(Parser* p) : parser(p) {
+SpitzFactoryAdapter::SpitzFactoryAdapter(Parser* p
+) : parser(p),
+    startTimePoint(make_shared<chrono::steady_clock::time_point>()) {
 }
 
 void SpitzFactoryAdapter::initialize(int argc, const char *argv[]) {
@@ -35,7 +37,7 @@ spits::job_manager *SpitzFactoryAdapter::create_job_manager(
     spits::metrics& metrics
 ) {
     initialize(argc, argv);
-    return new SpitzJobManager();
+    return new SpitzJobManager(startTimePoint);
 }
 
 spits::committer *SpitzFactoryAdapter::create_committer(
@@ -45,7 +47,7 @@ spits::committer *SpitzFactoryAdapter::create_committer(
     spits::metrics& metrics
 ) {
     initialize(argc, argv);
-    return new SpitzCommitter(traveltime, parser->getOutputDirectory(), parser->getFilename(), parser->getParserType());
+    return new SpitzCommitter(traveltime, startTimePoint, parser->getOutputDirectory(), parser->getFilename(), parser->getParserType());
 }
 
 spits::worker *SpitzFactoryAdapter::create_worker(

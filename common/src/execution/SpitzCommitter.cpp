@@ -11,11 +11,13 @@ using namespace std;
 
 SpitzCommitter::SpitzCommitter(
     shared_ptr<Traveltime> model,
+    shared_ptr<chrono::steady_clock::time_point> timePoint,
     const string& folder,
     const string& file,
     const string& computeMethod
-) : traveltime(model), 
-    filePath(file), 
+) : traveltime(model),
+    startTimePoint(timePoint),
+    filePath(file),
     dumper(folder, file, computeMethod, traveltime->getTraveltimeWord()) {
 
     Gather* gather = Gather::getInstance();
@@ -28,8 +30,6 @@ SpitzCommitter::SpitzCommitter(
 
     taskCount = gather->getTotalCdpsCount();
     taskIndex = 0;
-
-    startTimePoint = chrono::steady_clock::now();
 
     dumper.createDir();
 
@@ -82,7 +82,7 @@ int SpitzCommitter::commit_job(const spits::pusher& final_result) {
     // A result must be pushed even if the final result is not passed on
     final_result.push(NULL, 0);
 
-    chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - startTimePoint;
+    chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - *startTimePoint;
 
     LOGI("[CO] Results written to " << dumper.getOutputDirectoryPath());
     LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
