@@ -17,9 +17,10 @@ bool SpitzJobManager::next_task(const spits::pusher& task) {
 
     Gather* gather = Gather::getInstance();
 
-    LOGI("[JM] Job manager started sending tasks to workers.");
-
-    startTimePoint.reset(new chrono::steady_clock::time_point(chrono::steady_clock::now()));
+    if (startTimePoint == nullptr) {
+        LOGI("[JM] Job manager started sending tasks to workers.");
+        startTimePoint.reset(new chrono::steady_clock::time_point(chrono::steady_clock::now()));
+    }
 
     if (cdpIterator != gather->getCdps().end()) {
 
