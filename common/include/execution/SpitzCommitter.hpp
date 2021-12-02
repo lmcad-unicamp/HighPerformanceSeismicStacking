@@ -18,7 +18,9 @@ class SpitzCommitter : public spits::committer {
     private:
         mutex taskMutex;
 
-        shared_ptr<Traveltime> traveltime;
+        shared_ptr<Traveltime>& traveltime;
+
+        shared_ptr<chrono::steady_clock::time_point>& startTimePoint;
 
         string filePath;
 
@@ -30,12 +32,10 @@ class SpitzCommitter : public spits::committer {
 
         vector<float> tempResultArray;
 
-        shared_ptr<chrono::steady_clock::time_point> startTimePoint;
-
     public:
         SpitzCommitter(
             shared_ptr<Traveltime> traveltime,
-            shared_ptr<chrono::steady_clock::time_point> timePoint,
+            shared_ptr<chrono::steady_clock::time_point>& timePoint,
             const string& folder,
             const string& file,
             const string& computeMethod

@@ -11,7 +11,7 @@ using namespace std;
 
 SpitzCommitter::SpitzCommitter(
     shared_ptr<Traveltime> model,
-    shared_ptr<chrono::steady_clock::time_point> timePoint,
+    shared_ptr<chrono::steady_clock::time_point>& timePoint,
     const string& folder,
     const string& file,
     const string& computeMethod
