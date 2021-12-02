@@ -2,7 +2,7 @@
 
 using namespace std;
 
-SpitzWorker::SpitzWorker(ComputeAlgorithm* computeAlgorithm, spits::metrics& metrics)
+SpitzWorker::SpitzWorker(shared_ptr<ComputeAlgorithm> computeAlgorithm, spits::metrics& metrics)
 : metrics(metrics),
   computeAlgorithm(computeAlgorithm) {
 }

@@ -8,9 +8,9 @@
 
 using namespace std;
 
-SpitzFactoryAdapter::SpitzFactoryAdapter(Parser* p
-) : parser(p),
-    startTimePoint(nullptr) {
+SpitzFactoryAdapter::SpitzFactoryAdapter(
+    Parser* p
+) : parser(p), startTimePoint(make_shared<chrono::steady_clock::time_point>()) {
 }
 
 void SpitzFactoryAdapter::initialize(int argc, const char *argv[]) {

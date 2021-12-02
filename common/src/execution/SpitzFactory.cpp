@@ -28,7 +28,7 @@ spits::worker *SpitzFactory::create_worker(
 
     shared_ptr<DeviceContext> deviceContext(deviceBuilder->build(deviceCount++));
 
-    ComputeAlgorithm* computeAlgorithm = parser->parseComputeAlgorithm(builder, deviceContext, traveltime);
+    shared_ptr<ComputeAlgorithm> computeAlgorithm(parser->parseComputeAlgorithm(builder, deviceContext, traveltime));
 
     return new SpitzWorker(computeAlgorithm, metrics);
 }

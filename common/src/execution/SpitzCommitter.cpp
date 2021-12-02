@@ -75,19 +75,19 @@ int SpitzCommitter::commit_job(const spits::pusher& final_result) {
         StatisticResult statResult = static_cast<StatisticResult>(i);
         const StatisticalMidpointResult& statisticalResult = resultSet->get(statResult);
         const string& statResultName = STATISTIC_NAME_MAP[statResult];
+        LOGI("[CO] Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
         dumper.dumpStatisticalResult(statResultName, statisticalResult);
-        LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
+    }
+
+    LOGI("[CO] Results written to " << dumper.getOutputDirectoryPath());
+
+    if (startTimePoint) {
+        chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - *startTimePoint;
+        LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
     }
 
     // A result must be pushed even if the final result is not passed on
     final_result.push(NULL, 0);
-
-    LOGI("[CO] Results written to " << dumper.getOutputDirectoryPath());
-
-    if (startTimePoint != nullptr) {
-        chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - *startTimePoint;
-        LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
-    }
 
     return 0;
 }

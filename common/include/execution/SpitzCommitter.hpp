@@ -20,6 +20,8 @@ class SpitzCommitter : public spits::committer {
 
         shared_ptr<Traveltime> traveltime;
 
+        shared_ptr<chrono::steady_clock::time_point> startTimePoint;
+
         string filePath;
 
         Dumper dumper;
@@ -29,8 +31,6 @@ class SpitzCommitter : public spits::committer {
         unsigned int taskCount, taskIndex;
 
         vector<float> tempResultArray;
-
-        shared_ptr<chrono::steady_clock::time_point> startTimePoint;
 
     public:
         SpitzCommitter(

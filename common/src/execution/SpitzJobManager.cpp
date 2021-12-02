@@ -6,8 +6,10 @@
 
 using namespace std;
 
-SpitzJobManager::SpitzJobManager(shared_ptr<chrono::steady_clock::time_point> timePoint
-) : cdpIterator(Gather::getInstance()->getCdps().cbegin()),
+SpitzJobManager::SpitzJobManager(
+    shared_ptr<chrono::steady_clock::time_point> timePoint
+) : isStartTimePointSet(false),
+    cdpIterator(Gather::getInstance()->getCdps().cbegin()),
     startTimePoint(timePoint) {
     LOGI("[JM] Job manager created.");
 }
@@ -17,9 +19,10 @@ bool SpitzJobManager::next_task(const spits::pusher& task) {
 
     Gather* gather = Gather::getInstance();
 
-    if (startTimePoint == nullptr) {
+    if (!isStartTimePointSet && startTimePoint) {
         LOGI("[JM] Job manager started sending tasks to workers.");
         *startTimePoint = chrono::steady_clock::now();
+        isStartTimePointSet = true;
     }
 
     if (cdpIterator != gather->getCdps().end()) {

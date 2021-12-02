@@ -13,6 +13,7 @@ using namespace std;
 
 class SpitzJobManager : public spits::job_manager {
     private:
+        bool isStartTimePointSet;
         map<float, Cdp>::const_iterator cdpIterator;
         mutex iteratorMutex;
         shared_ptr<chrono::steady_clock::time_point> startTimePoint;
