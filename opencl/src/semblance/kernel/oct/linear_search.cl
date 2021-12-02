@@ -2,7 +2,7 @@
 
 __kernel
 void buildParameterArrayForOffsetContinuationTrajectory(
-    __global __read_only float* parameterArray,
+    __global float* parameterArray,
     float minVelocity,
     float incrementVelocity,
     unsigned int countVelocity,
@@ -28,9 +28,9 @@ void buildParameterArrayForOffsetContinuationTrajectory(
 
 __kernel
 void computeSemblancesForOffsetContinuationTrajectory(
-    __global __read_only float *samples,
-    __global __read_only float *midpoint,
-    __global __read_only float *halfoffset,
+    __global float *samples,
+    __global float *midpoint,
+    __global float *halfoffset,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     float apm,
@@ -40,12 +40,12 @@ void computeSemblancesForOffsetContinuationTrajectory(
     int tauIndexDisplacement,
     int windowSize,
     /* Parameter arrays */
-    __global __read_only float *parameterArray,
+    __global float *parameterArray,
     unsigned int totalParameterCount,
     /* Output arrays */
-    __global __write_only float* notUsedCountArray,
-    __global __write_only float *semblanceArray,
-    __global __write_only float *stackArray
+    __global float* notUsedCountArray,
+    __global float *semblanceArray,
+    __global float *stackArray
 ) {
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 
@@ -76,7 +76,7 @@ void computeSemblancesForOffsetContinuationTrajectory(
         for (unsigned int traceIndex = 0; traceIndex < traceCount; traceIndex++) {
             float m = midpoint[traceIndex];
             float h = halfoffset[traceIndex];
-            __global __read_only float *traceSamples = samples + traceIndex * samplesPerTrace;
+            __global float *traceSamples = samples + traceIndex * samplesPerTrace;
 
             errorCode = computeDisplacedMidpoint(h, h0, t0, m0, c, slope, &mh);
 
@@ -114,12 +114,12 @@ void computeSemblancesForOffsetContinuationTrajectory(
 
 __kernel
 void selectBestSemblancesForOffsetContinuationTrajectory(
-    __global __read_only float *semblanceArray,
-    __global __read_only float *stackArray,
-    __global __read_only float *parameterArray,
+    __global float *semblanceArray,
+    __global float *stackArray,
+    __global float *parameterArray,
     unsigned int totalParameterCount,
     unsigned int samplesPerTrace,
-    __global __write_only float *resultArray
+    __global float *resultArray
 ) {
     unsigned int sampleIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 
@@ -153,9 +153,9 @@ void selectBestSemblancesForOffsetContinuationTrajectory(
 
 __kernel
 void selectTracesForOffsetContinuationTrajectory(
-    __global __read_only float *midpointArray,
-    __global __read_only float *halfoffsetArray,
-    __global __read_only float *parameterArray,
+    __global float *midpointArray,
+    __global float *halfoffsetArray,
+    __global float *parameterArray,
     unsigned int parameterCount,
     unsigned int traceCount,
     unsigned int samplesPerTrace,

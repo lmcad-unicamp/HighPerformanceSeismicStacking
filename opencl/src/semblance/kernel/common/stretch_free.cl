@@ -2,12 +2,12 @@
 
  __kernel
  void selectBestSemblances(
-     __global __read_only float *semblanceArray,
-     __global __read_only float *stackArray,
-     __global __read_only float *nArray,
+     __global float *semblanceArray,
+     __global float *stackArray,
+     __global float *nArray,
      unsigned int nCount,
      unsigned int samplesPerTrace,
-     __global __write_only float *resultArray
+     __global float *resultArray
  ) {
      unsigned int sampleIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 

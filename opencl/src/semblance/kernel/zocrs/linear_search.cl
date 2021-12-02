@@ -2,7 +2,7 @@
 
 __kernel
 void buildParameterArrayForZeroOffsetCommonReflectionSurface(
-    __global __write_only float* parameterArray,
+    __global float* parameterArray,
     float minVelocity,
     float incrementVelocity,
     unsigned int countVelocity,
@@ -34,9 +34,9 @@ void buildParameterArrayForZeroOffsetCommonReflectionSurface(
 
 __kernel
 void computeSemblancesForZeroOffsetCommonReflectionSurface(
-    __global __read_only float *samples,
-    __global __read_only float *midpoint,
-    __global __read_only float *halfoffsetSquared,
+    __global float *samples,
+    __global float *midpoint,
+    __global float *halfoffsetSquared,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     float m0,
@@ -44,11 +44,11 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
     int tauIndexDisplacement,
     int windowSize,
     /* Parameter arrays */
-    __global __read_only float *parameterArray,
+    __global float *parameterArray,
     unsigned int totalParameterCount,
     /* Output arrays */
-    __global __write_only float *semblanceArray,
-    __global __write_only float *stackArray
+    __global float *semblanceArray,
+    __global float *stackArray
 ) {
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 
@@ -77,7 +77,7 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
         for (unsigned int traceIndex = 0; traceIndex < traceCount; traceIndex++) {
             float m = midpoint[traceIndex];
             float h_sq = halfoffsetSquared[traceIndex];
-            __global __read_only float *traceSamples = samples + traceIndex * samplesPerTrace;
+            __global float *traceSamples = samples + traceIndex * samplesPerTrace;
 
             float dm = m - m0;
             float tmp = t0 + a * dm;
@@ -109,12 +109,12 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
 
 __kernel
 void selectBestSemblancesForZeroOffsetCommonReflectionSurface(
-    __global __read_only float *semblanceArray,
-    __global __read_only float *stackArray,
-    __global __read_only float *parameterArray,
+    __global float *semblanceArray,
+    __global float *stackArray,
+    __global float *parameterArray,
     unsigned int totalParameterCount,
     unsigned int samplesPerTrace,
-    __global __write_only float *resultArray
+    __global float *resultArray
 ) {
     unsigned int sampleIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 

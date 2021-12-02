@@ -2,8 +2,8 @@
 
 __kernel
 void computeSemblancesForCommonMidPoint(
-    __global __read_only float *samples,
-    __global __read_only float *halfoffsetSquared,
+    __global float *samples,
+    __global float *halfoffsetSquared,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     unsigned int individualsPerPopulation,
@@ -11,8 +11,8 @@ void computeSemblancesForCommonMidPoint(
     int tauIndexDisplacement,
     int windowSize,
     unsigned int numberOfCommonResults,
-    __global __read_only float *x,
-    __global __write_only float *fx
+    __global float *x,
+    __global float *fx
 ) {
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
     unsigned int sampleIndex = threadIndex / individualsPerPopulation;
@@ -38,7 +38,7 @@ void computeSemblancesForCommonMidPoint(
 
         for (unsigned int traceIndex = 0; traceIndex < traceCount; traceIndex++) {
             float h_sq = halfoffsetSquared[traceIndex];
-            __global __read_only float *traceSamples = samples + traceIndex * samplesPerTrace;
+            __global float *traceSamples = samples + traceIndex * samplesPerTrace;
 
             float t = sqrt(t0 * t0 + c * h_sq);
 
@@ -65,9 +65,9 @@ void computeSemblancesForCommonMidPoint(
 
 __kernel
 void selectBestIndividualsForCommonMidPoint(
-    __global __read_only float* x,
-    __global __read_only float* fx,
-    __global __write_only float* resultArray,
+    __global float* x,
+    __global float* fx,
+    __global float* resultArray,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
     unsigned int numberOfCommonResults

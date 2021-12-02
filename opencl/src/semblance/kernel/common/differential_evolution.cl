@@ -25,9 +25,9 @@ inline float random_next(__global unsigned int* state) {
 
 __kernel
 void startPopulations(
-    __global __write_only float *x,
-    __global __read_only float *min,
-    __global __read_only float *max,
+    __global float *x,
+    __global float *min,
+    __global float *max,
     __global unsigned int *st,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
@@ -49,10 +49,10 @@ void startPopulations(
 
 __kernel
 void mutatePopulations(
-    __global __write_only float *v,
-    __global __read_only float *x,
-    __global __read_only float *minArray,
-    __global __read_only float *maxArray,
+    __global float *v,
+    __global float *x,
+    __global float *minArray,
+    __global float *maxArray,
     __global unsigned int *st,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
@@ -97,9 +97,9 @@ void mutatePopulations(
 
 __kernel
 void crossoverPopulations(
-    __global __write_only float *u,
-    __global __read_only float *x,
-    __global __read_only float *v,
+    __global float *u,
+    __global float *x,
+    __global float *v,
     __global unsigned int *st,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
@@ -132,8 +132,8 @@ __kernel
 void nextGeneration(
     __global float *x,
     __global float *fx,
-    __global __read_only float *u,
-    __global __read_only float *fu,
+    __global float *u,
+    __global float *fu,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
     unsigned int numberOfParameters,

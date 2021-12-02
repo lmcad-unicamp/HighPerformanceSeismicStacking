@@ -2,7 +2,7 @@
 
 __kernel
 void buildParameterArrayForCommonMidPoint(
-    __global __write_only float* parameterArray,
+    __global float* parameterArray,
     float minVelocity,
     float increment,
     unsigned int totalParameterCount
@@ -17,19 +17,19 @@ void buildParameterArrayForCommonMidPoint(
 
 __kernel
 void computeSemblancesForCommonMidPoint(
-    __global __read_only float *samples,
-    __global __read_only float *halfoffsetSquared,
+    __global float *samples,
+    __global float *halfoffsetSquared,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     float dtInSeconds,
     int tauIndexDisplacement,
     int windowSize,
     /* Parameter arrays */
-    __global __read_only float *parameterArray,
+    __global float *parameterArray,
     unsigned int totalParameterCount,
     /* Output arrays */
-    __global __write_only float *semblanceArray,
-    __global __write_only float *stackArray
+    __global float *semblanceArray,
+    __global float *stackArray
 ) {
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 
@@ -54,7 +54,7 @@ void computeSemblancesForCommonMidPoint(
 
         for (unsigned int traceIndex = 0; traceIndex < traceCount; traceIndex++) {
             float h_sq = halfoffsetSquared[traceIndex];
-            __global __read_only float *traceSamples = samples + traceIndex * samplesPerTrace;
+            __global float *traceSamples = samples + traceIndex * samplesPerTrace;
 
             float t = sqrt(t0 * t0 + c * h_sq);
 
@@ -81,12 +81,12 @@ void computeSemblancesForCommonMidPoint(
 
 __kernel
 void selectBestSemblancesForCommonMidPoint(
-    __global __read_only float *semblanceArray,
-    __global __read_only float *stackArray,
-    __global __read_only float *parameterArray,
+    __global float *semblanceArray,
+    __global float *stackArray,
+    __global float *parameterArray,
     unsigned int totalParameterCount,
     unsigned int samplesPerTrace,
-    __global __write_only float *resultArray
+    __global float *resultArray
 ) {
     unsigned int sampleIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 

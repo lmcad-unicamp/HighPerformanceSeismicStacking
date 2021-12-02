@@ -1,8 +1,8 @@
 __kernel
 void selectTracesForZeroOffsetCommonReflectionSurface(
-    __global __read_only float* midpointArray,
+    __global float* midpointArray,
     unsigned int traceCount,
-    __global __write_only char* usedTraceMaskArray,
+    __global char* usedTraceMaskArray,
     float m0,
     float apm
 ) {

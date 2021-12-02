@@ -2,9 +2,9 @@
 
 __kernel
 void computeSemblancesForZeroOffsetCommonReflectionSurface(
-    __global __read_only float *samples,
-    __global __read_only float *midpoint,
-    __global __read_only float *halfoffsetSquared,
+    __global float *samples,
+    __global float *midpoint,
+    __global float *halfoffsetSquared,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     float m0,
@@ -12,12 +12,12 @@ void computeSemblancesForZeroOffsetCommonReflectionSurface(
     int tauIndexDisplacement,
     int windowSize,
     /* Parameter arrays */
-    __global __read_only float *parameterArray,
-    __global __read_only float *nArray,
+    __global float *parameterArray,
+    __global float *nArray,
     unsigned int totalNCount,
     /* Output arrays */
-    __global __write_only float *semblanceArray,
-    __global __write_only float *stackArray
+    __global float *semblanceArray,
+    __global float *stackArray
 ) {
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
 

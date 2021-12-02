@@ -2,9 +2,9 @@
 
 __kernel
 void computeSemblancesForOffsetContinuationTrajectory(
-    __global __read_only float *samples,
-    __global __read_only float *midpoint,
-    __global __read_only float *halfoffset,
+    __global float *samples,
+    __global float *midpoint,
+    __global float *halfoffset,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     unsigned int individualsPerPopulation,
@@ -15,9 +15,9 @@ void computeSemblancesForOffsetContinuationTrajectory(
     int tauIndexDisplacement,
     int windowSize,
     unsigned int numberOfCommonResults,
-    __global __write_only float* notUsedCountArray,
-    __global __read_only float *x,
-    __global __write_only float *fx
+    __global float* notUsedCountArray,
+    __global float *x,
+    __global float *fx
 ) {
     unsigned int threadIndex = get_group_id(0) * get_local_size(0) + get_local_id(0);
     unsigned int sampleIndex = threadIndex / individualsPerPopulation;
@@ -49,7 +49,7 @@ void computeSemblancesForOffsetContinuationTrajectory(
         for (unsigned int traceIndex = 0; traceIndex < traceCount; traceIndex++) {
             float m = midpoint[traceIndex];
             float h = halfoffset[traceIndex];
-            __global __read_only float *traceSamples = samples + traceIndex * samplesPerTrace;
+            __global float *traceSamples = samples + traceIndex * samplesPerTrace;
 
             errorCode = computeDisplacedMidpoint(h, h0, t0, m0, c, slope, &mh);
 
@@ -87,9 +87,9 @@ void computeSemblancesForOffsetContinuationTrajectory(
 
 __kernel
 void selectBestIndividualsForOffsetContinuationTrajectory(
-    __global __read_only float* x,
-    __global __read_only float* fx,
-    __global __write_only float* resultArray,
+    __global float* x,
+    __global float* fx,
+    __global float* resultArray,
     unsigned int individualsPerPopulation,
     unsigned int samplesPerTrace,
     unsigned int numberOfCommonResults
@@ -128,9 +128,9 @@ void selectBestIndividualsForOffsetContinuationTrajectory(
 
 __kernel
 void selectTracesForOffsetContinuationTrajectory(
-    __global __read_only float *midpointArray,
-    __global __read_only float *halfoffsetArray,
-    __global __read_only float *x,
+    __global float *midpointArray,
+    __global float *halfoffsetArray,
+    __global float *x,
     unsigned int traceCount,
     unsigned int samplesPerTrace,
     unsigned int individualsPerPopulation,
