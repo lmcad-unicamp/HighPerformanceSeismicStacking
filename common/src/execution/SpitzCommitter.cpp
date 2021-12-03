@@ -90,13 +90,13 @@ int SpitzCommitter::commit_job(const spits::pusher& final_result) {
             LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
         }
 
-        // A result must be pushed even if the final result is not passed on
-        final_result.push(NULL, 0);
     }
     catch (const exception& err) {
         LOGI("[CO] Exception captured when commiting job " << err.what());
-        throw err;
     }
+
+    // A result must be pushed even if the final result is not passed on
+    final_result.push(NULL, 0);
 
     return 0;
 }
