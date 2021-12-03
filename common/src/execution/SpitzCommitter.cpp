@@ -62,31 +62,37 @@ int SpitzCommitter::commit_task(spits::istream& result) {
 
 int SpitzCommitter::commit_job(const spits::pusher& final_result) {
 
-    dumper.dumpGatherParameters(filePath);
+    try {
+        dumper.dumpGatherParameters(filePath);
 
-    for (unsigned int i = 0; i < traveltime->getNumberOfResults(); i++) {
-        dumper.dumpResult(
-            traveltime->getDescriptionForResult(i),
-            resultSet->getArrayForResult(i)
-        );
+        for (unsigned int i = 0; i < traveltime->getNumberOfResults(); i++) {
+            dumper.dumpResult(
+                traveltime->getDescriptionForResult(i),
+                resultSet->getArrayForResult(i)
+            );
+        }
+
+        for (unsigned int i = 0; i < static_cast<unsigned int>(StatisticResult::CNT); i++) {
+            StatisticResult statResult = static_cast<StatisticResult>(i);
+            const StatisticalMidpointResult& statisticalResult = resultSet->get(statResult);
+            const string& statResultName = STATISTIC_NAME_MAP[statResult];
+            dumper.dumpStatisticalResult(statResultName, statisticalResult);
+            LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
+        }
+
+        // A result must be pushed even if the final result is not passed on
+        final_result.push(NULL, 0);
+
+        LOGI("[CO] Results written to " << dumper.getOutputDirectoryPath());
+
+        if (startTimePoint != nullptr) {
+            chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - *startTimePoint;
+            LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
+        }
     }
-
-    for (unsigned int i = 0; i < static_cast<unsigned int>(StatisticResult::CNT); i++) {
-        StatisticResult statResult = static_cast<StatisticResult>(i);
-        const StatisticalMidpointResult& statisticalResult = resultSet->get(statResult);
-        const string& statResultName = STATISTIC_NAME_MAP[statResult];
-        dumper.dumpStatisticalResult(statResultName, statisticalResult);
-        LOGI("Average of " << statResultName << " is " << statisticalResult.getAverageOfAllMidpoints());
-    }
-
-    // A result must be pushed even if the final result is not passed on
-    final_result.push(NULL, 0);
-
-    LOGI("[CO] Results written to " << dumper.getOutputDirectoryPath());
-
-    if (startTimePoint != nullptr) {
-        chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - *startTimePoint;
-        LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
+    catch (const exception& err) {
+        LOGI("[CO] Exception captured when commiting job " << err.what());
+        throw err;
     }
 
     return 0;
