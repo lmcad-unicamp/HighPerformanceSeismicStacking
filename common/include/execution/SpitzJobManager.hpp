@@ -13,12 +13,13 @@ using namespace std;
 
 class SpitzJobManager : public spits::job_manager {
     private:
+        bool isStartTimePointSet;
         map<float, Cdp>::const_iterator cdpIterator;
         mutex iteratorMutex;
-        shared_ptr<chrono::steady_clock::time_point>& startTimePoint;
+        shared_ptr<chrono::steady_clock::time_point> startTimePoint;
 
     public:
-        SpitzJobManager(shared_ptr<chrono::steady_clock::time_point>& timePoint);
+        SpitzJobManager(shared_ptr<chrono::steady_clock::time_point> timePoint);
 
         bool next_task(const spits::pusher& task) override;
 };
