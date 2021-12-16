@@ -17,6 +17,7 @@ SpitzCommitter::SpitzCommitter(
     const string& computeMethod
 ) : traveltime(model),
     startTimePoint(timePoint),
+    committerStartTimePoint(chrono::steady_clock::now()),
     filePath(file),
     dumper(folder, file, computeMethod, traveltime->getTraveltimeWord()) {
 
@@ -81,10 +82,15 @@ int SpitzCommitter::commit_job(const spits::pusher& final_result) {
 
     LOGI("[CO] Results written to " << dumper.getOutputDirectoryPath());
 
+    chrono::steady_clock::time_point commitJobTimePoint(std::chrono::steady_clock::now());
+
     if (startTimePoint) {
-        chrono::duration<double> totalExecutionTime = std::chrono::steady_clock::now() - *startTimePoint;
-        LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s");
+        chrono::duration<double> totalExecutionTime = commitJobTimePoint - *startTimePoint;
+        LOGI("[CO] Job completed. It took " << totalExecutionTime.count() << "s since first task started");
     }
+
+    chrono::duration<double> totalExecutionTimeCommitter = commitJobTimePoint - committerStartTimePoint;
+    LOGI("[CO] Job completed. It took " << totalExecutionTimeCommitter.count() << "s since committer started");
 
     // A result must be pushed even if the final result is not passed on
     final_result.push(NULL, 0);

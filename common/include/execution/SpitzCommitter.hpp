@@ -21,6 +21,7 @@ class SpitzCommitter : public spits::committer {
         shared_ptr<Traveltime> traveltime;
 
         shared_ptr<chrono::steady_clock::time_point> startTimePoint;
+        chrono::steady_clock::time_point committerStartTimePoint;
 
         string filePath;
 
