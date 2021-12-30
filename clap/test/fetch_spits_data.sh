@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Commit for experiment identification only
-HEAD_COMMIT_ID="9027a04"
+HEAD_COMMIT_ID="caa5ee9"
 
 # Personal clapp's source directory
 CLAPP_SOURCE_PATH="/home/gustavociotto/clap"
@@ -50,6 +50,19 @@ function stop_cluster {
     ${CLAPP_CLUSTER} stop ${CLUSTER_ID} 2>&1)
 }
 
+function copy_from_taskmanager {
+    STARTING_NODE=${1}
+    TASK_MANAGER_NODE_IDX=${2}
+    TASK_MANAGER_OUTPUT_DIR=${3}
+
+    TASK_MANAGER_NODE_ID="node-$(expr $STARTING_NODE + $TASK_MANAGER_NODE_IDX)"
+
+    TASK_MANAGER_NODE_OUT_DIR="${TASK_MANAGER_OUTPUT_DIR}/${TASK_MANAGER_NODE_IDX}"
+
+    mkdir_node ${TASK_MANAGER_NODE_ID} ${TASK_MANAGER_NODE_OUT_DIR}
+    copy_node ${TASK_MANAGER_NODE_ID} ${SPITS_JOB_PATH} ${TASK_MANAGER_NODE_OUT_DIR}
+}
+
 function fetch_and_stop {
     AWS_INSTANCE=${1}
     DATA_NAME=${2}
@@ -72,19 +85,16 @@ function fetch_and_stop {
     resume_cluster ${CLUSTER_ID}
 
     mkdir_node ${JOB_MANAGER_NODE_ID} ${JOB_MANAGER_OUTPUT_DIR}
-    copy_node ${JOB_MANAGER_NODE_ID} ${SPITS_JOB_PATH} ${JOB_MANAGER_OUTPUT_DIR}
+    copy_node ${JOB_MANAGER_NODE_ID} ${SPITS_JOB_PATH} ${JOB_MANAGER_OUTPUT_DIR} &
 
+    PIDS="$!"
     for TASK_MANAGER_NODE_IDX in `seq 1 ${NODE_COUNT}`; do
-        TASK_MANAGER_NODE_ID="node-$(expr $STARTING_NODE + $TASK_MANAGER_NODE_IDX)"
-
-        TASK_MANAGER_NODE_OUT_DIR="${TASK_MANAGER_OUTPUT_DIR}/${TASK_MANAGER_NODE_IDX}"
-
-        mkdir_node ${TASK_MANAGER_NODE_ID} ${TASK_MANAGER_NODE_OUT_DIR}
-        copy_node ${TASK_MANAGER_NODE_ID} ${SPITS_JOB_PATH} ${TASK_MANAGER_NODE_OUT_DIR}
+        copy_from_taskmanager $STARTING_NODE $TASK_MANAGER_NODE_IDX $TASK_MANAGER_OUTPUT_DIR &
+        PIDS="${PIDS} $!"
     done
 
+    wait ${PIDS}
     stop_cluster ${CLUSTER_ID}
-
 }
 
 . ${CLAPP_SOURCE_PATH}/clap-env/bin/activate
