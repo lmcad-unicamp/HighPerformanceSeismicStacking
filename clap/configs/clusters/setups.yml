@@ -1,4 +1,8 @@
 setups:
+  setup-commands-common:
+    groups:
+    - name: commands-common
+
   setup-common:
     groups:
     - name: commands-common
@@ -22,7 +26,7 @@ setups:
       name: run-command
       group: commands-common
       extra:
-        cmd: "git pull origin master"
+        cmd: "git pull origin {{ project_branch }}"
         workdir: "{{ project_root }}"
         ansible_python_interpreter: /usr/bin/python3
 

@@ -1,2 +1,4 @@
-
 out/
+clap/private
+clap/configs/logins.yaml
+clap/configs/providers.yaml
