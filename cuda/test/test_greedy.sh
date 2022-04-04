@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TEST_ID="0447d1c"
+TEST_ID="<add a test id>"
 
 CUDA_ROOT=$(dirname ${PWD})
 PROJECT_ROOT=$(dirname ${CUDA_ROOT})
@@ -78,32 +78,40 @@ function greedy_offset_continuation_trajectory {
 }
 
 
-THREAD_COUNTS=(32 64 128 256 512 1024)
+## Example 1: Run Common Mid Point 10 times
+# THREAD_COUNT=64
+# for i in `seq 1 10`;
+# do
+#    echo "Executing ${i}th iteration - CMP"
+#    greedy_common_mid_point "fold2000" "90" ${i} ${THREAD_COUNT}
+#    greedy_common_mid_point "simple-synthetic" "0" ${i} ${THREAD_COUNT}
+# done
 
-for THREAD_COUNT in ${THREAD_COUNTS[@]}; do
-    #### Common Mid Point
-    for i in `seq 1 3`;
-    do
-        echo "Executing ${i}th iteration - CMP"
-        greedy_common_mid_point "fold2000" "90" ${i} ${THREAD_COUNT}
-        greedy_common_mid_point "simple-synthetic" "0" ${i} ${THREAD_COUNT}
-    done
-done
-
-#### Zero Offset Common Reflection Point
-
+## Example 2: Run Zero Offset Common Reflection Point 10 times
+# THREAD_COUNT=64
 # for i in `seq 1 10`;
 # do
 #     echo "Executing ${i}th iteration - ZOCRS"
-#     greedy_zero_offset_reflection_surface "fold2000" "90" ${i}
-#     greedy_zero_offset_reflection_surface "simple-synthetic" "0" ${i}
+#     greedy_zero_offset_reflection_surface "fold2000" "90" ${i} ${THREAD_COUNT}
+#     greedy_zero_offset_reflection_surface "simple-synthetic" "0" ${i} ${THREAD_COUNT}
 # done
 
-#### Offset Continuation Trajectory
-
+## Example 3: Run Offset Continuation Trajectory 10 times
+# THREAD_COUNT=64
 # for i in `seq 1 10`;
 # do
 #     echo "Executing ${i}th iteration - OCT"
-#     greedy_offset_continuation_trajectory "fold2000" "90" ${i}
-#     greedy_offset_continuation_trajectory "simple-synthetic" "0" ${i}
+#     greedy_offset_continuation_trajectory "fold2000" "90" ${i} ${THREAD_COUNT}
+#     greedy_offset_continuation_trajectory "simple-synthetic" "0" ${i} ${THREAD_COUNT}
+# done
+
+## Example 4: Assess different threads per block
+# THREAD_COUNTS=(32 64 128 256 512 1024)
+# for THREAD_COUNT in ${THREAD_COUNTS[@]}; do
+#     for i in `seq 1 3`;
+#     do
+#         echo "Executing ${i}th iteration - CMP"
+#         greedy_common_mid_point "fold2000" "90" ${i} ${THREAD_COUNT}
+#         greedy_common_mid_point "simple-synthetic" "0" ${i} ${THREAD_COUNT}
+#     done
 # done
