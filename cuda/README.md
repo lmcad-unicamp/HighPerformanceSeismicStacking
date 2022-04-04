@@ -6,7 +6,7 @@ CUDA specific source code to process seismic data.
 
 A Makefile is provided in order to generate all available binaries. Before starting, assure yourself to set up your environment with the latest CUDA libraries and APIs.
 After doing that, locate the CUDA's header location (usually in **/usr/local/cuda/include/**) and edit *CUDA_LIBRARY_PATH* and *NVCC* variables inside this folder's `Makefile` accordingly.
-Also check the compute capabilities of your graphic card and use **ARCH=30** when calling **make**. For example:
+Also check the compute capabilities of your graphic card and use **ARCH** when calling **make**. For example:
 
 ```
 $ make all -j16 ARCH=75
@@ -24,9 +24,21 @@ Six differents binaries should be created by the above command into `bin/` folde
 
 ## Running
 
+In the following subsections, we present some sample commands that can be used to execute the proposed CUDA implementation. Before going through these sections, it's important to understand what the parameters mean. Refer to the table below for a brief description about them:
+
+| **Parameter**   | **Description**                                                                                                                                          |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| APM             | Modular maximum threshold for a trace's midpoint. A trace is considered if its midpoint `m_0` is `m_0` <= `\|APM\|`.                                     |
+| APH             | Modular maximum threshold for a trace's half-offset. A trace is considered if its half-offset `h_0` is `h_0` <= `\|APH\|`.                               |
+| AZIMUTH         | Angle in degrees between the coordinate axis for which the measures were made and a reference direction.                                                 |
+| TAU             | Parameter used to compute the semblance processing window, which is given by `w = 2 * tau + 1`.                                                          |
+| GENERATIONS     | Number of generations. It applies to the **differential evolution** method only.                                                                         |
+| POPULATION_SIZE | The number of different values that is going to be considered for each attribute. It also applies to the **differential evolution** compute method only. |
+| THREAD_COUNT    | GPU thread count per block.                                                                                                                              |
+
 ### Single host + differential evolution
 
-To run considering **Common Mid Point** traveltime model and differential evolution algorithm, use the following command:
+To run considering the **Common Mid Point** traveltime model and differential evolution algorithm, use the following command:
 
 ```
 $ bin/single_host_de \
